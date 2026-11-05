@@ -4340,6 +4340,7 @@ scene.addEventListener("pointerup",function(e){
     var baseText = "";
     var restartTimer = null;
     var networkFails = 0;
+    var ignoreInputEvent = false;
 
     function showHint(msg, ms) {
       hint.textContent = msg || "";
@@ -4362,32 +4363,49 @@ scene.addEventListener("pointerup",function(e){
       if (label) label.textContent = on ? "escuchando…" : "dictar";
     }
 
+    /** Si el usuario creó una burbuja (se vació el input) u editó a mano, sincronizar. */
+    function syncBaseFromInput() {
+      var v = input.value || "";
+      // Si el cuadro está vacío → empezar de cero (caso típico: ya se creó la burbuja)
+      if (!v.trim()) {
+        baseText = "";
+        return;
+      }
+      // Si el texto actual ya no "arranca" como baseText, el usuario editó o se limpió parcialmente
+      if (baseText && v.indexOf(baseText) !== 0) {
+        baseText = v.replace(/\s+$/, "");
+      }
+    }
+
+    function setInputValue(v) {
+      ignoreInputEvent = true;
+      input.value = v;
+      try { input.dispatchEvent(new Event("input", { bubbles: true })); } catch (_) {}
+      try {
+        input.style.height = "auto";
+        input.style.height = Math.min(120, input.scrollHeight) + "px";
+      } catch (_) {}
+      ignoreInputEvent = false;
+    }
+
     function applyInterim(interimChunk) {
+      syncBaseFromInput();
       var left = baseText;
       var full = left;
       if (interimChunk) {
         full += (full && !/\s$/.test(full) ? " " : "") + interimChunk;
       }
-      input.value = full;
-      try { input.dispatchEvent(new Event("input", { bubbles: true })); } catch (_) {}
-      try {
-        input.style.height = "auto";
-        input.style.height = Math.min(120, input.scrollHeight) + "px";
-      } catch (_) {}
+      setInputValue(full);
     }
 
     function commitFinal(text) {
+      syncBaseFromInput();
       var piece = (text || "").trim();
       if (!piece) return;
       var left = baseText;
       if (left && !/\s$/.test(left)) left += " ";
       baseText = left + piece;
-      input.value = baseText;
-      try { input.dispatchEvent(new Event("input", { bubbles: true })); } catch (_) {}
-      try {
-        input.style.height = "auto";
-        input.style.height = Math.min(120, input.scrollHeight) + "px";
-      } catch (_) {}
+      setInputValue(baseText);
     }
 
     function killRec() {
@@ -4415,6 +4433,8 @@ scene.addEventListener("pointerup",function(e){
 
       r.onstart = function () {
         networkFails = 0;
+        // Cada vez que el motor arranca una frase nueva, alinear con lo que hay en pantalla
+        syncBaseFromInput();
         setListening(true);
         showHint("Escuchando… hablá y pausá al terminar la frase", 0);
         try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
@@ -4440,7 +4460,7 @@ scene.addEventListener("pointerup",function(e){
           setListening(false);
           showHint("Necesito permiso del micrófono. Revisá el candado de la barra de dirección.", 5000);
         } else if (err === "no-speech" || err === "aborted") {
-          /* se reintenta o se corta limpio */
+          /* ok */
         } else if (err === "network") {
           networkFails += 1;
           if (networkFails >= 2) {
@@ -4464,6 +4484,8 @@ scene.addEventListener("pointerup",function(e){
           setListening(false);
           return;
         }
+        // Antes de la siguiente frase, si el input se vació (burbuja creada), reiniciar base
+        syncBaseFromInput();
         restartTimer = setTimeout(function () {
           if (!wantListen) return;
           try {
@@ -4516,6 +4538,21 @@ scene.addEventListener("pointerup",function(e){
         showHint("No se pudo iniciar el micrófono", 3200);
       }
     }
+
+    // Si el usuario manda la burbuja o borra el texto, no arrastrar la frase vieja
+    form.addEventListener("submit", function () {
+      baseText = "";
+    }, true);
+
+    input.addEventListener("input", function () {
+      if (ignoreInputEvent) return;
+      // Edición manual o clear del app tras crear burbuja
+      if (!(input.value || "").trim()) {
+        baseText = "";
+      } else if (baseText && (input.value || "").indexOf(baseText) !== 0) {
+        baseText = (input.value || "").replace(/\s+$/, "");
+      }
+    });
 
     btn.addEventListener("click", function (e) {
       e.preventDefault();
