@@ -4253,7 +4253,6 @@ scene.addEventListener("pointerup",function(e){
 })();
 </script>
 
-
 <script id="burbujas-dictado">
 (function () {
   "use strict";
@@ -4261,7 +4260,6 @@ scene.addEventListener("pointerup",function(e){
   function boot() {
     var protocol = (location.protocol || "").toLowerCase();
     var isWeb = protocol === "https:" || protocol === "http:";
-    /* En disco (file://) no mostramos nada */
     if (!isWeb) return;
 
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -4293,9 +4291,9 @@ scene.addEventListener("pointerup",function(e){
         "50%{box-shadow:0 0 0 6px #ff5a5033,0 0 26px #ff5a50cc}}" +
       "#dictadoHint{" +
         "position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:36;" +
-        "padding:6px 12px;border-radius:999px;background:#2a1212f2;border:1px solid #ff8c8c88;" +
+        "padding:6px 14px;border-radius:999px;background:#2a1212f2;border:1px solid #ff8c8c88;" +
         "color:#ffd0d0;font:12.5px var(--font,system-ui);opacity:0;pointer-events:none;" +
-        "transition:opacity .2s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;" +
+        "transition:opacity .2s;max-width:min(420px,92vw);text-align:center;line-height:1.35;" +
       "}" +
       "#dictadoHint.show{opacity:1}" +
       "body.cinema-mode #dictadoBtn,body.focus-mode #dictadoBtn,body.fade-mode #dictadoBtn," +
@@ -4338,8 +4336,10 @@ scene.addEventListener("pointerup",function(e){
 
     var rec = null;
     var listening = false;
+    var wantListen = false;
     var baseText = "";
-    var interim = "";
+    var restartTimer = null;
+    var networkFails = 0;
 
     function showHint(msg, ms) {
       hint.textContent = msg || "";
@@ -4348,7 +4348,7 @@ scene.addEventListener("pointerup",function(e){
       if (msg && ms !== 0) {
         showHint._t = setTimeout(function () {
           if (!listening) hint.classList.remove("show");
-        }, ms || 3200);
+        }, ms || 4000);
       }
     }
 
@@ -4362,10 +4362,9 @@ scene.addEventListener("pointerup",function(e){
       if (label) label.textContent = on ? "escuchando…" : "dictar";
     }
 
-    function applyText(finalChunk, interimChunk) {
+    function applyInterim(interimChunk) {
       var left = baseText;
-      if (left && !/\s$/.test(left) && finalChunk) left += " ";
-      var full = left + (finalChunk || "");
+      var full = left;
       if (interimChunk) {
         full += (full && !/\s$/.test(full) ? " " : "") + interimChunk;
       }
@@ -4377,18 +4376,116 @@ scene.addEventListener("pointerup",function(e){
       } catch (_) {}
     }
 
-    function stop() {
+    function commitFinal(text) {
+      var piece = (text || "").trim();
+      if (!piece) return;
+      var left = baseText;
+      if (left && !/\s$/.test(left)) left += " ";
+      baseText = left + piece;
+      input.value = baseText;
+      try { input.dispatchEvent(new Event("input", { bubbles: true })); } catch (_) {}
+      try {
+        input.style.height = "auto";
+        input.style.height = Math.min(120, input.scrollHeight) + "px";
+      } catch (_) {}
+    }
+
+    function killRec() {
+      clearTimeout(restartTimer);
       if (!rec) return;
-      try { rec.onend = null; } catch (_) {}
+      try { rec.onstart = null; rec.onresult = null; rec.onerror = null; rec.onend = null; } catch (_) {}
       try { rec.stop(); } catch (_) {}
       try { rec.abort(); } catch (_) {}
+      rec = null;
+    }
+
+    function stop() {
+      wantListen = false;
+      killRec();
       setListening(false);
       showHint("Listo", 1600);
-      interim = "";
+    }
+
+    function makeRec() {
+      var r = new SR();
+      r.lang = "es-AR";
+      r.continuous = false;
+      r.interimResults = true;
+      r.maxAlternatives = 1;
+
+      r.onstart = function () {
+        networkFails = 0;
+        setListening(true);
+        showHint("Escuchando… hablá y pausá al terminar la frase", 0);
+        try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
+      };
+
+      r.onresult = function (ev) {
+        var interimNow = "";
+        var finals = "";
+        for (var i = ev.resultIndex; i < ev.results.length; i++) {
+          var res = ev.results[i];
+          var t = (res[0] && res[0].transcript) || "";
+          if (res.isFinal) finals += t;
+          else interimNow += t;
+        }
+        if (finals) commitFinal(finals);
+        else if (interimNow) applyInterim(interimNow);
+      };
+
+      r.onerror = function (ev) {
+        var err = (ev && ev.error) || "";
+        if (err === "not-allowed" || err === "service-not-allowed") {
+          wantListen = false;
+          setListening(false);
+          showHint("Necesito permiso del micrófono. Revisá el candado de la barra de dirección.", 5000);
+        } else if (err === "no-speech" || err === "aborted") {
+          /* se reintenta o se corta limpio */
+        } else if (err === "network") {
+          networkFails += 1;
+          if (networkFails >= 2) {
+            wantListen = false;
+            setListening(false);
+            showHint("El navegador no pudo usar su servicio de voz (suele ser de Google). Probá Chrome/Edge en HTTPS, sin bloqueadores.", 6500);
+          }
+        } else if (err === "audio-capture") {
+          wantListen = false;
+          setListening(false);
+          showHint("No se pudo usar el micrófono", 4000);
+        } else if (err) {
+          wantListen = false;
+          setListening(false);
+          showHint("No se pudo dictar (" + err + ")", 4000);
+        }
+      };
+
+      r.onend = function () {
+        if (!wantListen) {
+          setListening(false);
+          return;
+        }
+        restartTimer = setTimeout(function () {
+          if (!wantListen) return;
+          try {
+            killRec();
+            rec = makeRec();
+            rec.start();
+          } catch (e) {
+            wantListen = false;
+            setListening(false);
+            showHint("Se detuvo el dictado", 2500);
+          }
+        }, 280);
+      };
+
+      return r;
     }
 
     function start() {
-      if (listening) { stop(); return; }
+      if (listening || wantListen) {
+        stop();
+        return;
+      }
 
       var b = document.body;
       if (
@@ -4402,70 +4499,19 @@ scene.addEventListener("pointerup",function(e){
         return;
       }
 
+      if (typeof window.isSecureContext === "boolean" && !window.isSecureContext) {
+        showHint("El dictado necesita HTTPS. En HTTP suele fallar.", 5000);
+      }
+
       baseText = (input.value || "").replace(/\s+$/, "");
-      interim = "";
-
-      rec = new SR();
-      rec.lang = "es-AR";
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.maxAlternatives = 1;
-
-      var finalAcc = "";
-
-      rec.onstart = function () {
-        setListening(true);
-        showHint("Escuchando… hablá con naturalidad", 0);
-        try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
-      };
-
-      rec.onresult = function (ev) {
-        var interimNow = "";
-        var finals = "";
-        for (var i = ev.resultIndex; i < ev.results.length; i++) {
-          var r = ev.results[i];
-          var t = (r[0] && r[0].transcript) || "";
-          if (r.isFinal) finals += t;
-          else interimNow += t;
-        }
-        if (finals) {
-          finalAcc += (finalAcc && !/\s$/.test(finalAcc) ? " " : "") + finals.trim();
-          interim = "";
-          applyText(finalAcc, "");
-          baseText = (input.value || "").replace(/\s+$/, "");
-          finalAcc = "";
-        } else {
-          interim = interimNow;
-          applyText(finalAcc, interimNow);
-        }
-      };
-
-      rec.onerror = function (ev) {
-        var err = (ev && ev.error) || "";
-        if (err === "not-allowed" || err === "service-not-allowed") {
-          showHint("Necesito permiso del micrófono", 4000);
-        } else if (err === "no-speech") {
-          showHint("No escuché nada · probá de nuevo", 2800);
-        } else if (err === "aborted") {
-          /* ok */
-        } else if (err === "network") {
-          showHint("Sin conexión al servicio de voz", 3200);
-        } else if (err) {
-          showHint("No se pudo dictar (" + err + ")", 3200);
-        }
-        setListening(false);
-      };
-
-      rec.onend = function () {
-        if (listening) {
-          try { rec.start(); return; } catch (_) {}
-        }
-        setListening(false);
-      };
-
+      networkFails = 0;
+      wantListen = true;
+      killRec();
+      rec = makeRec();
       try {
         rec.start();
       } catch (e) {
+        wantListen = false;
         setListening(false);
         showHint("No se pudo iniciar el micrófono", 3200);
       }
@@ -4478,7 +4524,7 @@ scene.addEventListener("pointerup",function(e){
     });
 
     document.addEventListener("keydown", function (e) {
-      if (!listening) return;
+      if (!wantListen && !listening) return;
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
@@ -4488,7 +4534,7 @@ scene.addEventListener("pointerup",function(e){
 
     try {
       var obs = new MutationObserver(function () {
-        if (listening && form.classList.contains("auto-hidden")) stop();
+        if (wantListen && form.classList.contains("auto-hidden")) stop();
       });
       obs.observe(form, { attributes: true, attributeFilter: ["class"] });
     } catch (_) {}
@@ -4496,7 +4542,7 @@ scene.addEventListener("pointerup",function(e){
     window.__burbujasDictado = {
       start: start,
       stop: stop,
-      isListening: function () { return listening; }
+      isListening: function () { return !!(listening || wantListen); }
     };
   }
 
@@ -4506,7 +4552,5 @@ scene.addEventListener("pointerup",function(e){
     boot();
   }
 })();
-</script>
-
-</body>
+</script></body>
 </html>
