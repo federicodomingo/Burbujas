@@ -4253,5 +4253,260 @@ scene.addEventListener("pointerup",function(e){
 })();
 </script>
 
+
+<script id="burbujas-dictado">
+(function () {
+  "use strict";
+
+  function boot() {
+    var protocol = (location.protocol || "").toLowerCase();
+    var isWeb = protocol === "https:" || protocol === "http:";
+    /* En disco (file://) no mostramos nada */
+    if (!isWeb) return;
+
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var input = document.getElementById("input");
+    var form = document.getElementById("composer");
+    if (!input || !form) return;
+    if (document.getElementById("dictadoBtn")) return;
+
+    var css = document.createElement("style");
+    css.textContent =
+      "#dictadoBtn{" +
+        "flex:none;display:inline-flex;align-items:center;justify-content:center;gap:5px;" +
+        "height:44px;padding:0 12px;border-radius:999px;cursor:pointer;" +
+        "font-family:var(--font,system-ui);font-size:12.5px;font-weight:500;line-height:1;" +
+        "background:#ffffff12;color:#c8d7ffe6;border:1px solid rgba(150,180,255,.28);" +
+        "transition:background .15s,color .15s,box-shadow .15s,transform .12s;" +
+        "margin:0 4px 0 0;white-space:nowrap;user-select:none;" +
+      "}" +
+      "#dictadoBtn .dictado-ico{font-size:15px;line-height:1}" +
+      "#dictadoBtn:hover{background:#ffffff1f;color:#eaf0ff}" +
+      "#dictadoBtn:focus-visible{outline:2px solid rgba(150,190,255,.9);outline-offset:2px}" +
+      "#dictadoBtn:disabled{opacity:.45;cursor:not-allowed}" +
+      "#dictadoBtn.listening{" +
+        "background:linear-gradient(140deg,#ff8c8c,#ff4d4d 55%,#d63232);color:#fff;" +
+        "border-color:#ffc8b4e6;box-shadow:0 0 0 3px #ff5a5055,0 0 18px #ff5a50aa;" +
+        "animation:dictadoPulse 1.2s ease-in-out infinite;" +
+      "}" +
+      "@keyframes dictadoPulse{0%,100%{box-shadow:0 0 0 3px #ff5a5055,0 0 14px #ff5a5088}" +
+        "50%{box-shadow:0 0 0 6px #ff5a5033,0 0 26px #ff5a50cc}}" +
+      "#dictadoHint{" +
+        "position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:36;" +
+        "padding:6px 12px;border-radius:999px;background:#2a1212f2;border:1px solid #ff8c8c88;" +
+        "color:#ffd0d0;font:12.5px var(--font,system-ui);opacity:0;pointer-events:none;" +
+        "transition:opacity .2s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;" +
+      "}" +
+      "#dictadoHint.show{opacity:1}" +
+      "body.cinema-mode #dictadoBtn,body.focus-mode #dictadoBtn,body.fade-mode #dictadoBtn," +
+      "body.present-mode #dictadoBtn,body.readonly-mode #dictadoBtn{display:none!important}" +
+      "body.cinema-mode #dictadoHint,body.focus-mode #dictadoHint,body.fade-mode #dictadoHint," +
+      "body.present-mode #dictadoHint,body.readonly-mode #dictadoHint{display:none!important}" +
+      "@media(max-width:480px){" +
+        "#dictadoBtn{height:40px;padding:0 10px;font-size:11.5px}" +
+        "#dictadoHint{bottom:84px;font-size:11.5px}" +
+      "}";
+    document.head.appendChild(css);
+
+    var btn = document.createElement("button");
+    btn.id = "dictadoBtn";
+    btn.type = "button";
+    btn.innerHTML = '<span class="dictado-ico" aria-hidden="true">🎤</span><span>dictar</span>';
+    btn.setAttribute("aria-label", "Dictar por voz");
+    btn.setAttribute("aria-pressed", "false");
+    btn.title = "Dictar · hablá y se escribe solo";
+
+    if (!SR) {
+      btn.disabled = true;
+      btn.title = "Tu navegador no soporta dictado por voz. Probá con Chrome o Edge.";
+    }
+
+    var submit = form.querySelector('button[type="submit"]');
+    if (submit && submit.parentNode) {
+      submit.parentNode.insertBefore(btn, submit);
+    } else {
+      form.appendChild(btn);
+    }
+
+    var hint = document.createElement("div");
+    hint.id = "dictadoHint";
+    hint.setAttribute("role", "status");
+    hint.setAttribute("aria-live", "polite");
+    document.body.appendChild(hint);
+
+    if (!SR) return;
+
+    var rec = null;
+    var listening = false;
+    var baseText = "";
+    var interim = "";
+
+    function showHint(msg, ms) {
+      hint.textContent = msg || "";
+      hint.classList.toggle("show", !!msg);
+      clearTimeout(showHint._t);
+      if (msg && ms !== 0) {
+        showHint._t = setTimeout(function () {
+          if (!listening) hint.classList.remove("show");
+        }, ms || 3200);
+      }
+    }
+
+    function setListening(on) {
+      listening = on;
+      btn.classList.toggle("listening", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.title = on ? "Escuchando… clic o Esc para parar" : "Dictar · hablá y se escribe solo";
+      btn.setAttribute("aria-label", on ? "Detener dictado" : "Dictar por voz");
+      var label = btn.querySelector("span:last-child");
+      if (label) label.textContent = on ? "escuchando…" : "dictar";
+    }
+
+    function applyText(finalChunk, interimChunk) {
+      var left = baseText;
+      if (left && !/\s$/.test(left) && finalChunk) left += " ";
+      var full = left + (finalChunk || "");
+      if (interimChunk) {
+        full += (full && !/\s$/.test(full) ? " " : "") + interimChunk;
+      }
+      input.value = full;
+      try { input.dispatchEvent(new Event("input", { bubbles: true })); } catch (_) {}
+      try {
+        input.style.height = "auto";
+        input.style.height = Math.min(120, input.scrollHeight) + "px";
+      } catch (_) {}
+    }
+
+    function stop() {
+      if (!rec) return;
+      try { rec.onend = null; } catch (_) {}
+      try { rec.stop(); } catch (_) {}
+      try { rec.abort(); } catch (_) {}
+      setListening(false);
+      showHint("Listo", 1600);
+      interim = "";
+    }
+
+    function start() {
+      if (listening) { stop(); return; }
+
+      var b = document.body;
+      if (
+        b.classList.contains("cinema-mode") ||
+        b.classList.contains("fade-mode") ||
+        b.classList.contains("focus-mode") ||
+        b.classList.contains("present-mode") ||
+        b.classList.contains("readonly-mode")
+      ) {
+        showHint("Cerrá el otro modo antes de dictar", 2800);
+        return;
+      }
+
+      baseText = (input.value || "").replace(/\s+$/, "");
+      interim = "";
+
+      rec = new SR();
+      rec.lang = "es-AR";
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+
+      var finalAcc = "";
+
+      rec.onstart = function () {
+        setListening(true);
+        showHint("Escuchando… hablá con naturalidad", 0);
+        try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
+      };
+
+      rec.onresult = function (ev) {
+        var interimNow = "";
+        var finals = "";
+        for (var i = ev.resultIndex; i < ev.results.length; i++) {
+          var r = ev.results[i];
+          var t = (r[0] && r[0].transcript) || "";
+          if (r.isFinal) finals += t;
+          else interimNow += t;
+        }
+        if (finals) {
+          finalAcc += (finalAcc && !/\s$/.test(finalAcc) ? " " : "") + finals.trim();
+          interim = "";
+          applyText(finalAcc, "");
+          baseText = (input.value || "").replace(/\s+$/, "");
+          finalAcc = "";
+        } else {
+          interim = interimNow;
+          applyText(finalAcc, interimNow);
+        }
+      };
+
+      rec.onerror = function (ev) {
+        var err = (ev && ev.error) || "";
+        if (err === "not-allowed" || err === "service-not-allowed") {
+          showHint("Necesito permiso del micrófono", 4000);
+        } else if (err === "no-speech") {
+          showHint("No escuché nada · probá de nuevo", 2800);
+        } else if (err === "aborted") {
+          /* ok */
+        } else if (err === "network") {
+          showHint("Sin conexión al servicio de voz", 3200);
+        } else if (err) {
+          showHint("No se pudo dictar (" + err + ")", 3200);
+        }
+        setListening(false);
+      };
+
+      rec.onend = function () {
+        if (listening) {
+          try { rec.start(); return; } catch (_) {}
+        }
+        setListening(false);
+      };
+
+      try {
+        rec.start();
+      } catch (e) {
+        setListening(false);
+        showHint("No se pudo iniciar el micrófono", 3200);
+      }
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      start();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (!listening) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        stop();
+      }
+    }, true);
+
+    try {
+      var obs = new MutationObserver(function () {
+        if (listening && form.classList.contains("auto-hidden")) stop();
+      });
+      obs.observe(form, { attributes: true, attributeFilter: ["class"] });
+    } catch (_) {}
+
+    window.__burbujasDictado = {
+      start: start,
+      stop: stop,
+      isListening: function () { return listening; }
+    };
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+
 </body>
 </html>
