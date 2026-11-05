@@ -4341,6 +4341,13 @@ scene.addEventListener("pointerup",function(e){
     var restartTimer = null;
     var networkFails = 0;
     var ignoreInputEvent = false;
+    // Generación de sesión: sube al crear burbuja / vaciar input para ignorar
+    // resultados residuales del Web Speech API (Chrome a veces reenvía el final anterior al reiniciar).
+    var recGen = 0;
+    var lastCommitted = "";
+    var lastCommittedAt = 0;
+    var lastSubmitted = "";
+    var lastSubmittedAt = 0;
 
     function showHint(msg, ms) {
       hint.textContent = msg || "";
@@ -4363,12 +4370,27 @@ scene.addEventListener("pointerup",function(e){
       if (label) label.textContent = on ? "escuchando…" : "dictar";
     }
 
+    /** Empieza de cero: no arrastrar la frase que ya se convirtió en burbuja. */
+    function resetDictationBase(submittedText) {
+      baseText = "";
+      recGen += 1;
+      lastCommitted = "";
+      lastCommittedAt = 0;
+      if (submittedText && String(submittedText).trim()) {
+        lastSubmitted = String(submittedText).trim();
+        lastSubmittedAt = Date.now();
+      } else {
+        lastSubmitted = "";
+        lastSubmittedAt = 0;
+      }
+    }
+
     /** Si el usuario creó una burbuja (se vació el input) u editó a mano, sincronizar. */
     function syncBaseFromInput() {
       var v = input.value || "";
       // Si el cuadro está vacío → empezar de cero (caso típico: ya se creó la burbuja)
       if (!v.trim()) {
-        baseText = "";
+        if (baseText) baseText = "";
         return;
       }
       // Si el texto actual ya no "arranca" como baseText, el usuario editó o se limpió parcialmente
@@ -4402,6 +4424,18 @@ scene.addEventListener("pointerup",function(e){
       syncBaseFromInput();
       var piece = (text || "").trim();
       if (!piece) return;
+
+      var now = Date.now();
+      // El navegador a veces reenvía el mismo final al reiniciar el reconocimiento
+      if (piece === lastCommitted && now - lastCommittedAt < 2500) return;
+      // Justo después de crear una burbuja, ignorar si vuelve a llegar esa misma frase
+      if (lastSubmitted && piece === lastSubmitted && now - lastSubmittedAt < 4000) return;
+      // Si el input está vacío y la pieza es exactamente lo que acabamos de mandar, no reescribirla
+      if (!(input.value || "").trim() && lastSubmitted && piece === lastSubmitted) return;
+
+      lastCommitted = piece;
+      lastCommittedAt = now;
+
       var left = baseText;
       if (left && !/\s$/.test(left)) left += " ";
       baseText = left + piece;
@@ -4424,14 +4458,34 @@ scene.addEventListener("pointerup",function(e){
       showHint("Listo", 1600);
     }
 
+    /** Reinicia el reconocimiento en una sesión nueva (tras crear burbuja). */
+    function softRestartRec() {
+      if (!wantListen) return;
+      clearTimeout(restartTimer);
+      killRec();
+      restartTimer = setTimeout(function () {
+        if (!wantListen) return;
+        try {
+          rec = makeRec();
+          rec.start();
+        } catch (e) {
+          wantListen = false;
+          setListening(false);
+          showHint("Se detuvo el dictado", 2500);
+        }
+      }, 180);
+    }
+
     function makeRec() {
       var r = new SR();
       r.lang = "es-AR";
       r.continuous = false;
       r.interimResults = true;
       r.maxAlternatives = 1;
+      var myGen = recGen;
 
       r.onstart = function () {
+        if (myGen !== recGen) return;
         networkFails = 0;
         // Cada vez que el motor arranca una frase nueva, alinear con lo que hay en pantalla
         syncBaseFromInput();
@@ -4441,6 +4495,8 @@ scene.addEventListener("pointerup",function(e){
       };
 
       r.onresult = function (ev) {
+        // Sesión vieja (ya se creó una burbuja o se reinició): descartar
+        if (myGen !== recGen) return;
         var interimNow = "";
         var finals = "";
         for (var i = ev.resultIndex; i < ev.results.length; i++) {
@@ -4454,6 +4510,7 @@ scene.addEventListener("pointerup",function(e){
       };
 
       r.onerror = function (ev) {
+        if (myGen !== recGen) return;
         var err = (ev && ev.error) || "";
         if (err === "not-allowed" || err === "service-not-allowed") {
           wantListen = false;
@@ -4480,6 +4537,7 @@ scene.addEventListener("pointerup",function(e){
       };
 
       r.onend = function () {
+        if (myGen !== recGen) return;
         if (!wantListen) {
           setListening(false);
           return;
@@ -4487,7 +4545,7 @@ scene.addEventListener("pointerup",function(e){
         // Antes de la siguiente frase, si el input se vació (burbuja creada), reiniciar base
         syncBaseFromInput();
         restartTimer = setTimeout(function () {
-          if (!wantListen) return;
+          if (!wantListen || myGen !== recGen) return;
           try {
             killRec();
             rec = makeRec();
@@ -4526,6 +4584,11 @@ scene.addEventListener("pointerup",function(e){
       }
 
       baseText = (input.value || "").replace(/\s+$/, "");
+      lastCommitted = "";
+      lastCommittedAt = 0;
+      lastSubmitted = "";
+      lastSubmittedAt = 0;
+      recGen += 1;
       networkFails = 0;
       wantListen = true;
       killRec();
@@ -4539,16 +4602,24 @@ scene.addEventListener("pointerup",function(e){
       }
     }
 
-    // Si el usuario manda la burbuja o borra el texto, no arrastrar la frase vieja
+    // Si el usuario manda la burbuja, cortar la sesión vieja y no arrastrar esa frase
     form.addEventListener("submit", function () {
-      baseText = "";
+      var submitted = (input.value || "").trim();
+      resetDictationBase(submitted);
+      if (wantListen) softRestartRec();
     }, true);
 
     input.addEventListener("input", function () {
       if (ignoreInputEvent) return;
       // Edición manual o clear del app tras crear burbuja
       if (!(input.value || "").trim()) {
-        baseText = "";
+        // Solo resetear si había base o algo comprometido (evitar recGen infinito en vacíos)
+        if (baseText || lastCommitted) {
+          resetDictationBase(lastSubmitted || lastCommitted);
+          if (wantListen) softRestartRec();
+        } else {
+          baseText = "";
+        }
       } else if (baseText && (input.value || "").indexOf(baseText) !== 0) {
         baseText = (input.value || "").replace(/\s+$/, "");
       }
