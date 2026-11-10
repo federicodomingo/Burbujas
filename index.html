@@ -677,6 +677,7 @@ body.readonly-mode .bubble-shape,body.cinema-mode .bubble-shape{display:none!imp
 <button id="outlineBtn" type="button" title="Vista lista / outline (Ctrl+Alt+O)">☰ ver como lista</button>
 <button id="shuffleShapesBtn" type="button" title="Mezclar formas — cada burbuja toma una forma curva distinta al azar (se puede deshacer con Ctrl+Z)">🎲 mezclar formas</button>
 <button id="danceBtn" type="button" title="Modo Baile — las burbujas bailan al ritmo de tu música (compartir pestaña, micrófono o MP3)">🎵 bailar</button>
+<button id="toningBtn" type="button" title="Modo Chakras — tonos de los 7 chakras según el color de cada burbuja (como el modo baile, pero meditativo)">🧘 chakras</button>
 <button id="fontBtn" type="button" title="Cambiar la tipografía de todos tus contenidos">Aa tipografía</button>
 <button id="themeBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Elegir el modo visual">🎨 modo visual</button>
 <div id="themeOptions" role="group" aria-label="Modos visuales" hidden>
@@ -931,7 +932,7 @@ function shuffleAllBubbleShapes(){if(!bubbles.length)return;pushUndo();bubbles.f
 let editShape="burbuja";
 function buildShapePicker(){const box=$("shapePicker");if(!box||box.dataset.ready)return;box.dataset.ready="1";BUBBLE_SHAPES.forEach(s=>{const bt=document.createElement("button");bt.type="button";bt.className="shape-swatch";bt.dataset.shape=s.id;bt.title=s.nombre+" · "+(s.tipo==="real"?"existe en el mundo":"inventada");const mini=document.createElement("i");mini.style.borderRadius=s.r;bt.appendChild(mini);bt.addEventListener("click",()=>setEditShape(s.id));box.appendChild(bt)})}
 function setEditShape(id){editShape=bubbleShapeDef(id).id;const box=$("shapePicker");if(box)box.querySelectorAll(".shape-swatch").forEach(bt=>bt.classList.toggle("sel",(bt.dataset.shape||"")===editShape));const nm=$("shapeName");if(nm){const d=bubbleShapeDef(editShape);nm.textContent=d.nombre+" · "+(d.tipo==="real"?"existe en el mundo":"inventada")+" — todo curvo, nada recto"}}
-function addBubble(text,opts={}){if(text=String(text==null?"":text),opts.allowEmpty)text=text.replace(/\u00a0/g," "),text.trim()||(text="");else if(text=text.trim(),!text)return null;text.length>MAX_BUBBLE_CHARS_HARD&&(text=text.slice(0,MAX_BUBBLE_CHARS_HARD).trim()+"\u2026");const wrap=document.createElement("div");wrap.className="bubble-wrap",scene.appendChild(wrap);const el=document.createElement("div");el.className="bubble",el.tabIndex=-1,el.setAttribute("role","button"),opts.urgent&&el.classList.add("urgent");const ub=document.createElement("button");ub.className="bubble-urgent",ub.type="button",ub.textContent="!",ub.setAttribute("aria-label","Marcar como urgente"),ub.setAttribute("aria-pressed",opts.urgent?"true":"false");const fb=document.createElement("button");fb.className="bubble-focus",fb.type="button",fb.textContent="\u25C9",fb.title="Modo foco: ver solo esta y sus vecinas",fb.setAttribute("aria-label","Enfocar esta burbuja"),fb.addEventListener("click",e=>{e.stopPropagation(),focusId===b.id?exitFocus():enterFocus(b)});const nb=document.createElement("button");nb.className="bubble-note",nb.type="button",nb.title="Nota adjunta",nb.setAttribute("aria-label","Abrir nota adjunta"),nb.innerHTML=NOTE_ICON;const dn=document.createElement("button");dn.className="bubble-done",dn.type="button",dn.textContent="\u2713";const sh=document.createElement("button");sh.className="bubble-shape",sh.type="button",sh.textContent="\u{1F3B2}",sh.setAttribute("aria-label","Cambiar forma"),sh.title="Cambiar forma (todo curvo, nada recto)";const iconStr=normalizeIcon(opts.icon!=null?opts.icon:opts.i),ic=document.createElement("span");ic.className="bubble-icon",ic.setAttribute("aria-hidden","true"),iconStr&&(ic.textContent=iconStr);const sp=document.createElement("span");sp.className="bubble-text",sp.appendChild(renderBubbleText(text));const dl=document.createElement("button");dl.className="bubble-del",dl.type="button",dl.textContent="\xD7",dl.setAttribute("aria-label","Eliminar burbuja"),el.appendChild(ub),el.appendChild(fb),el.appendChild(ic),el.appendChild(sp),el.appendChild(dl),el.appendChild(nb),el.appendChild(dn),el.appendChild(sh),wrap.appendChild(el),iconStr&&el.classList.add("has-icon");const hue=opts.hue!=null?opts.hue:pickNewHue();wrap.style.setProperty("--hue",hue);const sc=opts.scale!=null?Math.max(MIN_SCALE,Math.min(MAX_SCALE,opts.scale)):1;wrap.style.setProperty("--bubble-scale",sc);const _shapeSeedId=opts.id||newId("b");const _shapeId=(opts.shape||opts.sh||opts.shapeId)&&BUBBLE_SHAPE_MAP[opts.shape||opts.sh||opts.shapeId]?(opts.shape||opts.sh||opts.shapeId):(opts.id?pickShapeForId(opts.id):pickRandomShapeId());applyShapeToEl(el,_shapeId,_shapeSeedId);const w=el.offsetWidth||120,h=el.offsetHeight||48;wrap.style.width=w+"px",wrap.style.height=h+"px";const rh=document.createElement("div");rh.className="bubble-resize",wrap.appendChild(rh);const __sp=(()=>{const sc=view.scale||1,hw=w/2,hh=h/2,rnd=(a,b)=>a+Math.random()*Math.max(0,b-a);let x0=Math.max(hw,(16-view.x)/sc+hw),x1=Math.min(W-hw,(W-16-view.x)/sc-hw);let y0=Math.max(topLimit+hh,(topLimit-view.y)/sc+hh),y1=Math.min(floorY-hh,(H*.55-view.y)/sc-hh);if(x1<x0){x0=hw;x1=Math.max(hw,W-hw)}if(y1<y0){y0=topLimit+hh;y1=Math.max(y0,Math.min(floorY-hh,H*.5))}return{x:rnd(x0,x1),y:rnd(y0,y1)}})();const b={id:_shapeSeedId,shape:_shapeId,wrap,el,span:sp,iconEl:ic,resizeHandle:rh,text,icon:iconStr,hue,w,h,scale:sc,urgent:!!opts.urgent,done:!!opts.done,note:hasNote(opts.note)?opts.note:null,cx:opts.cx!=null?opts.cx:__sp.x,cy:opts.cy!=null?opts.cy:__sp.y,vx:opts.vx!=null?opts.vx:(Math.random()-.5)*1.2,vy:opts.vy!=null?opts.vy:Math.random()*1.5,eqRatio:.3+Math.random()*.6,phase:Math.random()*Math.PI*2,freq:.16+Math.random()*.22,dead:!1,dragging:!1,resizing:!1,dropTarget:null,groupId:opts.groupId||null,tags:Array.isArray(opts.tags)?opts.tags.slice(0,8):[],order:opts.order!=null?opts.order:null,status:opts.status||"",parentId:opts.parentId!=null?opts.parentId:(opts.p!=null?opts.p:null),olCollapsed:!!(opts.olCollapsed||opts.oc)};updateBubbleTagsUI(b),updateBubbleStatusUI(b),syncDoneUI(b),el.style.transform="rotate(0deg)",b.note&&el.classList.add("has-note"),wrap.style.transform=`translate3d(${(b.cx-w/2).toFixed(1)}px,${(b.cy-h/2).toFixed(1)}px,0)`;let ds=null;el.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"&&e.button!==0||e.target.closest&&e.target.closest(".bubble-del, .bubble-urgent, .bubble-done, .bubble-note, .bubble-focus, .bubble-shape, .bubble-link")||connectMode)return;if(e.shiftKey||e.ctrlKey||e.metaKey)e.preventDefault();const isMulti=b.el.classList.contains("selected")&&bubbles.filter(x=>!x.dead&&!x.groupId&&x.el.classList.contains("selected")).length>1;let multi=null;isMulti&&(multi=bubbles.filter(x=>!x.dead&&!x.groupId&&x.el.classList.contains("selected")).map(x=>({b:x,cx:x.cx,cy:x.cy})));const w0=clientToWorld(e.clientX,e.clientY);ds={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:w0.x-b.cx,oy:w0.y-b.cy,moved:!1,snap:snapshotState(),multi,alt:e.altKey,shift:e.shiftKey};try{el.setPointerCapture(e.pointerId)}catch(_){}}),el.addEventListener("pointermove",e=>{if(!ds||ds.id!==e.pointerId)return;const dx=e.clientX-ds.sx,dy=e.clientY-ds.sy;if(!ds.moved&&dx*dx+dy*dy>25&&(ds.moved=!0,b.dragging=!0,el.classList.add("dragging"),markBubbleWillChange(b,!0),ds.multi&&ds.multi.forEach(m=>{m.b!==b&&(m.b.dragging=!0,m.b.el.classList.add("dragging"),markBubbleWillChange(m.b,!0))})),ds.moved){const wd=clientDeltaToWorld(dx,dy);if(ds.multi)ds.multi.forEach(m=>{m.b.cx=m.cx+wd.x,m.b.cy=m.cy+wd.y;const hh=m.b.h/2;m.b.cy-hh<topLimit&&(m.b.cy=topLimit+hh),m.b.vx=0,m.b.vy=0});else{const w2=clientToWorld(e.clientX,e.clientY);b.cx=w2.x-ds.ox,b.cy=w2.y-ds.oy;const hh=b.h/2;b.cy-hh<topLimit&&(b.cy=topLimit+hh),b.vx=0,b.vy=0;try{setDropTarget(b,findDropTarget(b))}catch(_){}}}}),el.addEventListener("dblclick",e=>{if(window.__burbujasReadOnly||window.__burbujasPresenting)return;if(e.target.closest&&e.target.closest("a,.bubble-link,.bubble-del,.bubble-urgent,.bubble-done,.bubble-note,.bubble-focus,.bubble-shape,.bubble-resize"))return;e.preventDefault();e.stopPropagation();openEdit(b)});el.addEventListener("pointerup",e=>{if(!ds||ds.id!==e.pointerId)return;const was=ds.moved,snap=ds.snap,multi=ds.multi,wasAlt=ds.alt||e.altKey,wasShift=!!(ds.shift||e.shiftKey||e.ctrlKey||e.metaKey);ds=null;/* Sin arrastre real, o Shift/Ctrl aunque haya micro-movimiento: seleccionar */if(!was||wasShift&&!multi){if(wasAlt&&!wasShift){focusId===b.id?exitFocus():enterFocus(b);return}if(wasShift){const already=b.el.classList.contains("selected");if(!already){const any=bubbles.some(x=>!x.dead&&!x.groupId&&x.el.classList.contains("selected"));if(!any){const kb=typeof getKbFocus==="function"?getKbFocus():null;if(kb&&kb!==b&&!kb.dead&&!kb.groupId)kb.el.classList.add("selected")}b.el.classList.add("selected")}else b.el.classList.remove("selected");setKbFocus(b);updateSelectionToolbar();return}if(was){/* arrastre simple: cae al manejo de drag más abajo */}else{if(focusId){focusId===b.id?exitFocus():enterFocus(b);return}clearSelectedVisuals();b.el.classList.add("selected");setKbFocus(b);updateSelectionToolbar();return}}if(multi){multi.forEach(m=>{m.b.dragging=!1,m.b.el.classList.remove("dragging"),markBubbleWillChange(m.b,!1),m.b.vx=0,m.b.vy=0});let targetGroup=null;for(const g of groups)if(b.cx>g.x&&b.cx<g.x+g.w&&b.cy>g.y&&b.cy<g.y+g.h){targetGroup=g;break}pushSnapshot(snap),targetGroup?(multi.forEach(m=>{m.b.dead||m.b.groupId||(m.b.groupId=targetGroup.id,containBubble(m.b,targetGroup,!1))}),syncGroupsAfterBubbleChange(),clearSelectedVisuals(),saveAll(),showAutosaveToast("\u2713 Burbujas a\xF1adidas al grupo")):(saveAll(),updateSelectionToolbar());return}b.dragging=!1,b.vx=0,b.vy=0,el.classList.remove("dragging"),markBubbleWillChange(b,!1);const t=b.dropTarget;clearDropTarget(b);const isOutside=g=>!!g&&(b.cx<g.x||b.cx>g.x+g.w||b.cy<g.y||b.cy>g.y+g.h);if(t&&!t.dead){const g=getGroup(b.groupId);pushSnapshot(snap),g&&isOutside(g)?(b.groupId=null,syncGroupsAfterBubbleChange(),saveAll(),showAutosaveToast("\u2713 Burbuja liberada del grupo")):(g&&containBubble(b,g,!1),saveAll());openNewConnectionModal(b,t);return}const cur=getGroup(b.groupId);if(cur){if(isOutside(cur)){pushSnapshot(snap),b.groupId=null;for(const g of groups)if(g!==cur&&b.cx>g.x+8&&b.cx<g.x+g.w-8&&b.cy>g.y+8&&b.cy<g.y+g.h-8){b.groupId=g.id,containBubble(b,g,!1),syncGroupsAfterBubbleChange(),saveAll(),showAutosaveToast("\u2713 Burbuja movida al grupo");return}syncGroupsAfterBubbleChange(),saveAll(),showAutosaveToast("\u2713 Burbuja liberada del grupo")}else pushSnapshot(snap),containBubble(b,cur,!1),saveAll();return}for(const g of groups)if(b.cx>g.x+8&&b.cx<g.x+g.w-8&&b.cy>g.y+8&&b.cy<g.y+g.h-8){pushSnapshot(snap),b.groupId=g.id,containBubble(b,g,!1),saveAll(),showAutosaveToast("\u2713 Burbuja a\xF1adida al grupo");return}pushSnapshot(snap),saveAll()}),el.addEventListener("pointercancel",e=>{!ds||ds.id!==e.pointerId||(ds.multi&&ds.multi.forEach(m=>{m.b.dragging=!1,m.b.el.classList.remove("dragging")}),ds=null,b.dragging=!1,b.vx=0,b.vy=0,el.classList.remove("dragging"),markBubbleWillChange(b,!1),clearDropTarget(b))});let rs=null;return rh.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"&&e.button!==0)return;e.stopPropagation(),e.preventDefault();const dx=e.clientX-b.cx,dy=e.clientY-b.cy,sd=Math.sqrt(dx*dx+dy*dy)||1;rs={id:e.pointerId,ss:b.scale,sd,snap:snapshotState()},b.resizing=!0,el.classList.add("resizing"),markBubbleWillChange(b,!0);try{rh.setPointerCapture(e.pointerId)}catch(_){}}),rh.addEventListener("pointermove",e=>{if(!rs||rs.id!==e.pointerId)return;const dx=e.clientX-b.cx,dy=e.clientY-b.cy,d=Math.sqrt(dx*dx+dy*dy);let ns=rs.ss*(d/rs.sd);ns=Math.max(MIN_SCALE,Math.min(MAX_SCALE,ns)),b.scale=ns,b._forceRemeasure=!0,wrap.style.setProperty("--bubble-scale",ns),remeasure(b)}),rh.addEventListener("pointerup",e=>{if(!rs||rs.id!==e.pointerId)return;const changed=b.scale!==rs.ss,snap=rs.snap;if(rs=null,b.resizing=!1,el.classList.remove("resizing"),markBubbleWillChange(b,!1),changed){const g=getGroup(b.groupId);g&&containBubble(b,g,!1),pushSnapshot(snap),saveAll()}}),rh.addEventListener("pointercancel",e=>{!rs||rs.id!==e.pointerId||(rs=null,b.resizing=!1,el.classList.remove("resizing"),markBubbleWillChange(b,!1))}),dl.addEventListener("click",e=>{e.stopPropagation(),pop(b)}),ub.addEventListener("click",e=>{e.stopPropagation(),toggleUrgent(b)}),dn.addEventListener("click",e=>{e.stopPropagation(),toggleDone(b)}),sh.addEventListener("click",e=>{e.stopPropagation(),cycleBubbleShape(b)}),nb.addEventListener("click",e=>{e.stopPropagation(),openNote(b)}),bubbles.push(b),b}function toggleUrgent(b){if(!b||b.dead)return;pushUndo(),b.urgent=!b.urgent,b.el.classList.toggle("urgent",b.urgent);const btn=b.el.querySelector(".bubble-urgent");btn&&btn.setAttribute("aria-pressed",b.urgent?"true":"false"),saveAll()}function syncDoneUI(b){if(!b||!b.el)return;b.el.classList.toggle("done",!!b.done);const btn=b.el.querySelector(".bubble-done");if(btn){const t=b.done?"Hecha \xB7 toc\xE1 para volver a pendiente":"Marcar como hecha";btn.setAttribute("aria-pressed",b.done?"true":"false"),btn.title=t,btn.setAttribute("aria-label",t)}}function toggleDone(b){!b||b.dead||(pushUndo(),b.done=!b.done,syncDoneUI(b),saveAll())}function pop(b,skipUndo){if(!b||b.dead)return;skipUndo||pushUndo(),bubbles.forEach(ch=>{if(!ch.dead&&ch.parentId===b.id)ch.parentId=b.parentId||null}),kbFocusId===b.id&&clearKbFocus(),b.dead=!0,b.dropTarget&&(b.dropTarget.el.classList.remove("drop-target"),b.dropTarget=null),currentHoverTarget===b&&(currentHoverTarget=null),b.el.classList.add("pop"),setTimeout(()=>b.wrap.remove(),460);for(let i2=connections.length-1;i2>=0;i2--)(connections[i2].a===b||connections[i2].b===b)&&removeConnection(connections[i2],!0);const i=bubbles.indexOf(b);i>-1&&bubbles.splice(i,1),syncGroupsAfterBubbleChange(),saveAll(),b.note&&saveNotes(),updateSelectionToolbar()}function openNewConnectionModal(a,b){pendingConnection={a,b},editingConnection=null,pendingGroupConnection=null,editingGroupConnection=null,connTitle.textContent="Nueva conexi\xF3n",connInfo.innerHTML=esc(truncate(a.text))+'<span class="arrow">\u21C4</span>'+esc(truncate(b.text)),connLabel.value="",setConnDir(0),setConnType(""),connMultiHint(pendingConnection),connError.textContent="",connDelete.style.display="none",connModal.classList.add("is-open"),requestAnimationFrame(()=>connLabel.focus({preventScroll:!0}))}function openEditConnectionModal(c){pendingConnection=null,editingConnection=c,pendingGroupConnection=null,editingGroupConnection=null,connTitle.textContent="Editar conexi\xF3n",connInfo.innerHTML=esc(truncate(c.a.text))+'<span class="arrow">\u21C4</span>'+esc(truncate(c.b.text)),connLabel.value=c.label||"",setConnDir(c.dir),setConnType(c.type),connMultiHint(null),connDirNames(truncate(c.a.text,24),truncate(c.b.text,24)),connError.textContent="",connDelete.style.display="",connModal.classList.add("is-open"),requestAnimationFrame(()=>{connLabel.focus({preventScroll:!0}),connLabel.select()})}function openNewGroupConnectionModal(a,b){pendingConnection=null,editingConnection=null,pendingGroupConnection={a,b},editingGroupConnection=null,connTitle.textContent="Nueva conexi\xF3n entre burbujas madre",connInfo.innerHTML=esc(truncate(a.title,40))+'<span class="arrow">\u21C4</span>'+esc(truncate(b.title,40)),connLabel.value="",setConnDir(0),setConnType(""),connMultiHint(pendingConnection),connError.textContent="",connDelete.style.display="none",connModal.classList.add("is-open"),requestAnimationFrame(()=>connLabel.focus({preventScroll:!0}))}function openEditGroupConnectionModal(gc){pendingConnection=null,editingConnection=null,pendingGroupConnection=null,editingGroupConnection=gc,connTitle.textContent="Editar conexi\xF3n entre burbujas madre",connInfo.innerHTML=esc(truncate(gc.a.title,40))+'<span class="arrow">\u21C4</span>'+esc(truncate(gc.b.title,40)),connLabel.value=gc.label||"",setConnDir(gc.dir),setConnType(gc.type),connMultiHint(null),connDirNames(truncate(gc.a.title,24),truncate(gc.b.title,24)),connError.textContent="",connDelete.style.display="",connModal.classList.add("is-open"),requestAnimationFrame(()=>{connLabel.focus({preventScroll:!0}),connLabel.select()})}function closeConnModal(){connModal.classList.remove("is-open"),pendingConnection=null,editingConnection=null,pendingGroupConnection=null,editingGroupConnection=null}function saveConnection(){const l=connLabel.value.trim();if(editingConnection){if(editingConnection.label===l&&(editingConnection.dir|0)===connDirSel&&(editingConnection.type||"")===connTypeSel){closeConnModal();return}pushUndo(),editingConnection.label=l,editingConnection.dir=connDirSel,editingConnection.type=connTypeSel,applyLinkDir(editingConnection),applyRelType(editingConnection),updateLabelUI(editingConnection)}else if(editingGroupConnection){if(editingGroupConnection.label===l&&(editingGroupConnection.dir|0)===connDirSel&&(editingGroupConnection.type||"")===connTypeSel){closeConnModal();return}pushUndo(),editingGroupConnection.label=l,editingGroupConnection.dir=connDirSel,editingGroupConnection.type=connTypeSel,applyLinkDir(editingGroupConnection),applyRelType(editingGroupConnection),updateGroupLabelUI(editingGroupConnection)}else if(pendingConnection){const a=pendingConnection.a,b=pendingConnection.b;pushUndo(),createConnection(a,b,l,{dir:connDirSel,type:connTypeSel,multi:!0})}else if(pendingGroupConnection){const a=pendingGroupConnection.a,b=pendingGroupConnection.b;if(groupConnections.find(c=>c.a===a&&c.b===b||c.a===b&&c.b===a)){closeConnModal();return}pushUndo(),createGroupConnection(a,b,l,{dir:connDirSel,type:connTypeSel})}closeConnModal(),saveAll()}function deleteConnectionAction(){editingConnection?(pushUndo(),removeConnection(editingConnection),closeConnModal()):editingGroupConnection&&(pushUndo(),removeGroupConnection(editingGroupConnection),closeConnModal())}connLabel.addEventListener("input",()=>{connError.textContent=""}),connLabel.addEventListener("keydown",e=>{e.key==="Enter"&&(e.preventDefault(),saveConnection())}),document.querySelectorAll("#conn-dir button").forEach(b=>b.addEventListener("click",()=>setConnDir(+b.dataset.dir))),connSave.addEventListener("click",saveConnection),connCancel.addEventListener("click",closeConnModal),connDelete.addEventListener("click",deleteConnectionAction),connModal.addEventListener("click",e=>{e.target===connModal&&closeConnModal()});function clamp(v,min,max){return Math.max(min,Math.min(max,v))}function getGroup(id){return id&&groups.find(g=>g.id===id)||null}function placeGroup(g){!g||!g.el||(g.el.style.left=g.x+"px",g.el.style.top=g.y+"px",g.el.style.width=g.w+"px",g.el.style.height=g.h+"px")}function applyGroupCollapsedVisuals(g){if(!g||!g.el)return;const collapsed=!!g.collapsed;g.el.classList.toggle("collapsed",collapsed);const btn=g.el.querySelector(".mother-collapse");btn&&(btn.textContent=collapsed?"\u25B6":"\u25BC",btn.title=collapsed?"Expandir grupo":"Colapsar a chip",btn.setAttribute("aria-label",btn.title),btn.setAttribute("aria-expanded",collapsed?"false":"true"));const members=groupMembers(g),n=members.length;g.titleEl&&(collapsed?g.titleEl.textContent=(g.title||"Grupo")+(n?" \xB7 "+n:""):g.titleEl.textContent=g.title||"Grupo"),members.forEach(b=>{b.wrap&&b.wrap.classList.toggle("in-collapsed",collapsed)}),connections.forEach(c=>{const aIn=c.a.groupId===g.id,bIn=c.b.groupId===g.id,hide=collapsed&&aIn&&bIn;c.pathEl.classList.toggle("in-collapsed-link",hide),c.labelEl.classList.toggle("in-collapsed-link",hide)})}function setGroupCollapsed(g,collapsed,opts={}){if(!(!g||!!g.collapsed==!!collapsed)){if(opts.silent||pushUndo(),collapsed){g.expandedW=g.w,g.expandedH=g.h,g.expandedX=g.x,g.expandedY=g.y;const label=g.title||"Grupo",chipW=clamp(Math.max(150,Math.min(280,label.length*8+90)),150,Math.min(320,W-16)),chipH=44,cx=g.x+g.w/2,cy=g.y+g.h/2;g.w=chipW,g.h=chipH,g.x=clamp(cx-chipW/2,8,Math.max(8,W-chipW-8)),g.y=clamp(cy-chipH/2,topLimit,Math.max(topLimit,floorY+18-chipH)),g.collapsed=!0}else{const cx=g.x+g.w/2,cy=g.y+g.h/2;g.w=Number.isFinite(g.expandedW)?g.expandedW:Math.max(260,g.w),g.h=Number.isFinite(g.expandedH)?g.expandedH:Math.max(190,g.h),g.x=clamp(cx-g.w/2,8,Math.max(8,W-g.w-8)),g.y=clamp(cy-g.h/2,topLimit,Math.max(topLimit,floorY+18-g.h)),g.collapsed=!1,groupMembers(g).forEach(b=>containBubble(b,g,!1))}applyGroupCollapsedVisuals(g),placeGroup(g),opts.silent||(saveAll(),showAutosaveToast(collapsed?"\u2713 Grupo colapsado":"\u2713 Grupo expandido"))}}function toggleGroupCollapsed(g){g&&setGroupCollapsed(g,!g.collapsed)}function groupMembers(g){return g?(g._membersCache&&g._membersGen===membersGen||(g._membersCache=bubbles.filter(b=>!b.dead&&b.groupId===g.id),g._membersGen=membersGen),g._membersCache):[]}let membersGen=0;function invalidateMembersCache(){membersGen++}function gSaveW(g){return g._fitW===g.w&&g._wantW>g.w?g._wantW:g.w}function gSaveH(g){return g._fitH===g.h&&g._wantH>g.h?g._wantH:g.h}function fitGroupsToViewport(){for(const g of groups){(g._fitW!==g.w||g._fitH!==g.h)&&(g._wantW=g.w,g._wantH=g.h);const ox=g.x,oy=g.y,ow=g.w,oh=g.h;g.w=Math.min(g._wantW,Math.max(150,W-16)),g.h=Math.min(g._wantH,Math.max(150,Math.min(H-16,floorY+22))),g._fitW=g.w,g._fitH=g.h,g.x=clamp(g.x+(ow-g.w)/2,8,Math.max(8,W-g.w-8)),g.y=clamp(g.y+(oh-g.h)/2,topLimit,Math.max(topLimit,floorY+18-g.h));const dx=g.x-ox,dy=g.y-oy;groupMembers(g).forEach(b=>{b.cx+=dx,b.cy+=dy}),placeGroup(g),groupMembers(g).forEach(b=>containBubble(b,g,!1))}}function containBubble(b,g,bounce=!0){if(!b||!g)return;const hw=(b.w||100)/2,hh=(b.h||40)/2,minX=g.x+GROUP_PAD+hw,maxX=g.x+g.w-GROUP_PAD-hw,minY=g.y+GROUP_HEADER+hh+2,maxY=g.y+g.h-GROUP_PAD-hh;maxX<minX?(b.cx=g.x+g.w/2,b.vx=0):b.cx<minX?(b.cx=minX,bounce&&(b.vx=Math.abs(b.vx)*.55)):b.cx>maxX&&(b.cx=maxX,bounce&&(b.vx=-Math.abs(b.vx)*.55)),maxY<minY?(b.cy=g.y+GROUP_HEADER+(g.h-GROUP_HEADER)/2,b.vy=0):b.cy<minY?(b.cy=minY,bounce&&(b.vy=Math.abs(b.vy)*.55)):b.cy>maxY&&(b.cy=maxY,bounce&&(b.vy=-Math.abs(b.vy)*.55))}function translateGroup(g,dx,dy){if(!(!g||dx===0&&dy===0)){g.x+=dx,g.y+=dy;for(const b of groupMembers(g))b.cx+=dx,b.cy+=dy;placeGroup(g)}}function resolveGroupBubble(g,b,dt){if(!g||!g.el||g.dragging||g.resizing||!b||b.dead||b.groupId||b.dragging||b.resizing)return;const hw=(b.w||100)/2,hh=(b.h||40)/2,pad=g.collapsed?12:18,minX=g.x-pad,maxX=g.x+g.w+pad,minY=g.y-pad,maxY=g.y+g.h+pad,cx=b.cx,cy=b.cy;if(cx+hw<minX||cx-hw>maxX||cy+hh<minY||cy-hh>maxY)return;let px=0,py=0,depth=0;const nx=Math.max(minX,Math.min(maxX,cx)),ny=Math.max(minY,Math.min(maxY,cy)),dx=cx-nx,dy=cy-ny,dist=Math.sqrt(dx*dx+dy*dy);if(dist<1e-4){const dl=cx-minX,dr=maxX-cx,dtp=cy-minY,db=maxY-cy,m=Math.min(dl,dr,dtp,db);m===dl?(px=-1,py=0,depth=dl+hw):m===dr?(px=1,py=0,depth=dr+hw):m===dtp?(px=0,py=-1,depth=dtp+hh):(px=0,py=1,depth=db+hh)}else{const ux=dx/dist,uy=dy/dist;if(depth=1/Math.sqrt(ux*ux/(hw*hw)+uy*uy/(hh*hh))-dist,depth<=.05)return;px=ux,py=uy}const wantX=cx+px*depth,wantY=cy+py*depth,tx=Math.max(hw,Math.min(W-hw,wantX)),ty=Math.max(topLimit+hh,Math.min(floorY-hh,wantY));b.cx=tx,b.cy=ty;const rx=wantX-tx,ry=wantY-ty;if(Math.abs(rx)>.01||Math.abs(ry)>.01){const gdx=px*rx,gdy=py*ry;translateGroup(g,gdx,gdy),gdx>0&&g.vx<0?g.vx=Math.abs(g.vx):gdx<0&&g.vx>0&&(g.vx=-Math.abs(g.vx)),gdy>0&&g.vy<0?g.vy=Math.abs(g.vy):gdy<0&&g.vy>0&&(g.vy=-Math.abs(g.vy))}const kick=Math.min(depth*.5,10);b.vx+=px*kick,b.vy+=py*kick}function resolveGroupPair(a,b,dt){if(!a||!b||!a.el||!b.el||a.dragging||b.dragging||a.resizing||b.resizing||groupConnections.some(gc=>gc.a===a&&gc.b===b||gc.a===b&&gc.b===a))return;const ox=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x),oy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);if(!(ox<=0||oy<=0))if(ox<oy){const dir=a.x+a.w/2<b.x+b.w/2?-1:1,push=ox*.78+2.5;translateGroup(a,dir*push,0),translateGroup(b,-dir*push,0),dir<0?(a.vx>0&&(a.vx=-Math.abs(a.vx)*1.4),b.vx<0&&(b.vx=Math.abs(b.vx)*1.4)):(a.vx<0&&(a.vx=Math.abs(a.vx)*1.4),b.vx>0&&(b.vx=-Math.abs(b.vx)*1.4))}else{const dir=a.y+a.h/2<b.y+b.h/2?-1:1,push=oy*.78+2.5;translateGroup(a,0,dir*push),translateGroup(b,0,-dir*push),dir<0?(a.vy>0&&(a.vy=-Math.abs(a.vy)*1.4),b.vy<0&&(b.vy=Math.abs(b.vy)*1.4)):(a.vy<0&&(a.vy=Math.abs(a.vy)*1.4),b.vy>0&&(b.vy=-Math.abs(b.vy)*1.4))}}let kbFocusId=null;function getKbFocus(){return kbFocusId&&bubbles.find(b=>b.id===kbFocusId&&!b.dead)||null}function setKbFocus(b){const prev=getKbFocus();if(prev&&prev.el&&prev.el.classList.remove("kb-focus"),!b||b.dead){kbFocusId=null;return}kbFocusId=b.id,b.el.classList.add("kb-focus");try{b.el.focus({preventScroll:!0})}catch(_){}}function clearKbFocus(){const prev=getKbFocus();prev&&prev.el&&prev.el.classList.remove("kb-focus"),kbFocusId=null}function navigableBubbles(){let list=bubbles.filter(b=>!b.dead);if(searchState&&searchState.active&&searchState.hits&&searchState.hits.length){const hitIds=new Set(searchState.hits.map(b=>b.id));list=list.filter(b=>hitIds.has(b.id))}if(focusId){const focused=bubbles.find(b=>b.id===focusId&&!b.dead);if(focused){const allow=new Set([focused.id]);connections.forEach(c=>{c.a===focused?allow.add(c.b.id):c.b===focused&&allow.add(c.a.id)}),focused.groupId&&bubbles.forEach(b=>{!b.dead&&b.groupId===focused.groupId&&allow.add(b.id)}),list=list.filter(b=>allow.has(b.id))}}return list}function sortBubblesReadingOrder(list){return list.slice().sort((a,b)=>a.cy-b.cy||a.cx-b.cx||String(a.id).localeCompare(String(b.id)))}function nearestBubble(from,dir){const list=navigableBubbles();if(!list.length)return null;if(!from)return sortBubblesReadingOrder(list)[0];const cand=list.filter(b=>b!==from);if(!cand.length)return from;const ax=from.cx,ay=from.cy;let best=null,bestScore=1/0;for(const b of cand){const dx=b.cx-ax,dy=b.cy-ay;let ok=!1,primary=0,secondary=0;if(dir==="right"?(ok=dx>4,primary=dx,secondary=Math.abs(dy)):dir==="left"?(ok=dx<-4,primary=-dx,secondary=Math.abs(dy)):dir==="down"?(ok=dy>4,primary=dy,secondary=Math.abs(dx)):dir==="up"&&(ok=dy<-4,primary=-dy,secondary=Math.abs(dx)),!ok)continue;const score=primary*primary+secondary*secondary*2.8;score<bestScore&&(bestScore=score,best=b)}if(best)return best;const ordered=sortBubblesReadingOrder(list);return dir==="right"||dir==="down"?ordered[0]:ordered[ordered.length-1]}function stepKbFocus(dir){const cur=getKbFocus(),next=nearestBubble(cur,dir);if(next&&(setKbFocus(next),searchState&&searchState.active&&searchCenterChk&&searchCenterChk.checked))try{centerSearchHit(next)}catch(_){}}function kbTargetOk(){return!(lockScreen.classList.contains("is-visible")||inlineCreator||connectMode||modal.classList.contains("is-open")||connModal.classList.contains("is-open")||passModal.classList.contains("is-open")||noteModal.classList.contains("is-open")||lightbox.classList.contains("is-open")||exportModal.classList.contains("is-open")||helpModal&&helpModal.classList.contains("is-open"))}function isTypingTarget(t){if(!t)return!1;const tag=t.tagName;return!!(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT"||t.isContentEditable)}document.addEventListener("keydown",e=>{if(!kbTargetOk()||isTypingTarget(e.target)||e.ctrlKey||e.metaKey||e.altKey&&!e.shiftKey)return;const k=e.key;if(k==="ArrowRight"||k==="ArrowLeft"||k==="ArrowUp"||k==="ArrowDown"){if(e.preventDefault(),e.shiftKey){const step=e.altKey?24:8,dx=k==="ArrowRight"?step:k==="ArrowLeft"?-step:0,dy=k==="ArrowDown"?step:k==="ArrowUp"?-step:0;nudgeBubbles(dx,dy);return}stepKbFocus(k==="ArrowRight"?"right":k==="ArrowLeft"?"left":k==="ArrowUp"?"up":"down");return}if(k==="Home"){e.preventDefault();const list=sortBubblesReadingOrder(navigableBubbles());list.length&&setKbFocus(list[0]);return}if(k==="End"){e.preventDefault();const list=sortBubblesReadingOrder(navigableBubbles());list.length&&setKbFocus(list[list.length-1]);return}if(k==="Enter"||k==="F2"){const b=getKbFocus();if(!b)return;e.preventDefault(),openEdit(b);return}if(k==="!"||k==="1"&&e.shiftKey){const b=getKbFocus();if(!b)return;e.preventDefault(),toggleUrgent(b);return}});function modalFocusables(root){return root?[...root.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(el=>el.offsetParent!==null||el===document.activeElement):[]}function trapModalTab(e,modalEl,cardSel){if(e.key!=="Tab"||!modalEl.classList.contains("is-open"))return;const card=modalEl.querySelector(cardSel||".modal-card")||modalEl,list=modalFocusables(card);if(list.length<1)return;const first=list[0],last2=list[list.length-1];e.shiftKey?(document.activeElement===first||!card.contains(document.activeElement))&&(e.preventDefault(),last2.focus()):(document.activeElement===last2||!card.contains(document.activeElement))&&(e.preventDefault(),first.focus())}document.addEventListener("keydown",e=>{modal.classList.contains("is-open")?trapModalTab(e,modal):connModal.classList.contains("is-open")?trapModalTab(e,connModal):passModal.classList.contains("is-open")?trapModalTab(e,passModal):noteModal.classList.contains("is-open")?trapModalTab(e,noteModal):exportModal.classList.contains("is-open")?trapModalTab(e,exportModal):helpModal&&helpModal.classList.contains("is-open")&&trapModalTab(e,helpModal)});function getSelectedBubbles(){return bubbles.filter(b=>!b.dead&&!b.groupId&&b.el.classList.contains("selected"))}function selectAllFreeBubbles(){let n=0;bubbles.forEach(b=>{b.dead||b.groupId||(b.el.classList.add("selected"),n++)}),updateSelectionToolbar(),n&&showAutosaveToast(n+" seleccionadas")}function duplicateBubble(b,offset){if(!b||b.dead)return null;const o=offset!=null?offset:28;let note=null;return hasNote(b.note)&&(note={t:b.note.t||"",l:(b.note.l||[]).map(l=>({url:l.url,title:l.title||""})),i:(b.note.i||[]).slice(),f:(b.note.f||[]).map(m=>({id:m.id,name:m.name,type:m.type,size:m.size}))}),addBubble(b.text,{hue:b.hue,urgent:!!b.urgent,done:!!b.done,scale:b.scale,cx:b.cx+o,cy:b.cy+o,note,icon:b.icon||"",tags:Array.isArray(b.tags)?b.tags.slice():[],groupId:b.groupId||null,parentId:b.parentId||null,vx:0,vy:0,shape:b.shape||""})}function duplicateSelectedOrFocused(){let list=getSelectedBubbles();if(!list.length){const kb=typeof getKbFocus=="function"?getKbFocus():null;kb&&!kb.groupId&&(list=[kb])}if(!list.length)return;pushUndo();const created=[];list.forEach((b,i)=>{const nb=duplicateBubble(b,24+i*6);nb&&created.push(nb)}),clearSelectedVisuals(),created.forEach(b=>b.el.classList.add("selected")),created[0]&&setKbFocus(created[0]),updateSelectionToolbar(),saveAll(),created.length&&(playBubbleSound(),showAutosaveToast(created.length===1?"\u2713 Burbuja duplicada":"\u2713 "+created.length+" burbujas duplicadas"))}function nudgeBubbles(dx,dy){let list=getSelectedBubbles();if(!list.length){const kb=typeof getKbFocus=="function"?getKbFocus():null;kb&&(list=[kb])}list.length&&(pushUndo(),list.forEach(b=>{b.cx+=dx,b.cy+=dy,b.vx=0,b.vy=0;const g=getGroup(b.groupId);if(g&&!g.collapsed)containBubble(b,g,!1);else{const hw=(b.w||40)/2,hh=(b.h||24)/2;b.cx=Math.max(hw,Math.min(W-hw,b.cx)),b.cy=Math.max(topLimit+hh,Math.min(floorY-hh,b.cy))}b._lx=null}),saveAll())}function selExtraG(){return groups.filter(g=>g.el&&g.el.classList.contains("selected"))}function selExtraP(){return(typeof postits!="undefined"?postits:[]).filter(p=>p.el&&p.el.classList.contains("selected"))}function clearSelectedVisuals(){bubbles.forEach(b=>b.el.classList.remove("selected")),groups.forEach(g=>g.el&&g.el.classList.remove("selected")),typeof postits!="undefined"&&postits.forEach(p=>p.el&&p.el.classList.remove("selected")),updateSelectionToolbar()}function removeMotherGroup(g,dissolve=!0){if(!g)return;invalidateMembersCache();for(let i2=groupConnections.length-1;i2>=0;i2--)(groupConnections[i2].a===g||groupConnections[i2].b===g)&&removeGroupConnection(groupConnections[i2],!0);const i=groups.indexOf(g);i>=0&&groups.splice(i,1),g.el&&g.el.remove(),dissolve&&bubbles.forEach(b=>{b.groupId===g.id&&(b.groupId=null)})}function syncGroupsAfterBubbleChange(){invalidateMembersCache();for(const g of[...groups]){const members=groupMembers(g);g.members=members.map(b=>b.id),members.length<2?removeMotherGroup(g,!0):applyGroupCollapsedVisuals(g)}}function enterConnectMode(sourceGroup){const others=groups.filter(gr=>gr!==sourceGroup&&!gr.dead);if(!others.length){showAutosaveToast("No hay otra burbuja madre para conectar");return}exitConnectMode(),connectMode={source:sourceGroup},sourceGroup.el.classList.add("connecting-source");const btn=sourceGroup.el.querySelector(".mother-connect");btn&&btn.classList.add("connecting"),others.forEach(gr=>{gr.el.classList.add("connecting-target")}),setTimeout(()=>{connectMode&&document.addEventListener("click",connectModeCancel,!0)},0)}function connectModeCancel(e){if(!connectMode)return;const t=e.target;t&&t.closest&&(t.closest(".connecting-target")||t.closest(".mother-connect")||t.closest(".mother-group"))||exitConnectMode()}function exitConnectMode(){if(connectMode){if(document.removeEventListener("click",connectModeCancel,!0),connectMode.source&&connectMode.source.el){connectMode.source.el.classList.remove("connecting-source");const btn=connectMode.source.el.querySelector(".mother-connect");btn&&btn.classList.remove("connecting")}groups.forEach(gr=>{gr.el&&gr.el.classList.remove("connecting-target")}),connectMode=null}}function createMotherGroup(memberBubbles,title,opts={}){const members=[...new Set((memberBubbles||[]).filter(b=>b&&!b.dead&&bubbles.includes(b)))];if(members.length<1||members.length<2&&!opts.allowSingle)return null;const minL=Math.min(...members.map(b=>b.cx-b.w/2)),maxR=Math.max(...members.map(b=>b.cx+b.w/2)),minT=Math.min(...members.map(b=>b.cy-b.h/2)),maxB=Math.max(...members.map(b=>b.cy+b.h/2)),maxW=Math.max(150,W-16),maxH=Math.max(150,Math.min(H-16,floorY+22));let w=Number.isFinite(opts.w)?opts.w:Math.max(260,maxR-minL+64);w=clamp(w,Math.min(190,maxW),maxW);let h=Number.isFinite(opts.h)?opts.h:Math.max(190,maxB-minT+78);h=clamp(h,Math.min(170,maxH),maxH);let x=Number.isFinite(opts.x)?opts.x:(minL+maxR-w)/2,y=Number.isFinite(opts.y)?opts.y:(minT+maxB-h)/2;x=clamp(x,8,Math.max(8,W-w-8)),y=clamp(y,topLimit,Math.max(topLimit,floorY+18-h));const hue=opts.hue!=null?opts.hue:Math.round(members.reduce((s,b)=>s+b.hue,0)/members.length),g={id:opts.id||newId("g"),title:String(title||"Nuevo grupo").trim()||"Nuevo grupo",x,y,w,h,hue,members:members.map(b=>b.id),el:null,titleEl:null,handle:null,dragging:!1,resizing:!1,collapsed:!!opts.collapsed,olCollapsed:!!(opts.olCollapsed||opts.oc),expandedW:Number.isFinite(opts.expandedW)?opts.expandedW:w,expandedH:Number.isFinite(opts.expandedH)?opts.expandedH:h,vx:Number.isFinite(opts.vx)?opts.vx:(Math.random()<.5?-1:1)*(2.125+Math.random()*2.125),vy:Number.isFinite(opts.vy)?opts.vy:(Math.random()<.5?-1:1)*(.85+Math.random()*1.275)},el=document.createElement("div");el.className="mother-group",el.setAttribute("data-group-id",g.id);const handle=document.createElement("button");handle.type="button",handle.className="mother-handle",handle.title="Arrastrar el grupo completo (solt\xE1 sobre otra madre para conectarlas)",handle.setAttribute("aria-label","Mover grupo"),handle.textContent="\u283F";const connectBtn=document.createElement("button");connectBtn.type="button",connectBtn.className="mother-connect",connectBtn.title="Conectar con otra burbuja madre",connectBtn.setAttribute("aria-label","Conectar con otra burbuja madre"),connectBtn.textContent="\u{1F517}",connectBtn.addEventListener("click",e=>{if(e.stopPropagation(),e.preventDefault(),connectMode&&connectMode.source===g){exitConnectMode();return}if(connectMode){const src=connectMode.source;exitConnectMode();const ex=groupConnections.find(c=>c.a===src&&c.b===g||c.a===g&&c.b===src);ex?openEditGroupConnectionModal(ex):openNewGroupConnectionModal(src,g);return}enterConnectMode(g)});const titleEl2=document.createElement("div");titleEl2.className="mother-group-title",titleEl2.textContent=g.title,titleEl2.title="Clic para cambiar el t\xEDtulo",titleEl2.setAttribute("role","textbox"),titleEl2.setAttribute("aria-label","T\xEDtulo del grupo");const delBtn=document.createElement("button");delBtn.type="button",delBtn.className="mother-del",delBtn.textContent="\xD7",delBtn.title="Eliminar grupo",delBtn.setAttribute("aria-label","Eliminar grupo"),delBtn.addEventListener("click",e=>{e.stopPropagation(),e.preventDefault(),confirm('\xBFEliminar la burbuja madre "'+g.title+`"?
+function addBubble(text,opts={}){if(text=String(text==null?"":text),opts.allowEmpty)text=text.replace(/\u00a0/g," "),text.trim()||(text="");else if(text=text.trim(),!text)return null;text.length>MAX_BUBBLE_CHARS_HARD&&(text=text.slice(0,MAX_BUBBLE_CHARS_HARD).trim()+"\u2026");const wrap=document.createElement("div");wrap.className="bubble-wrap",scene.appendChild(wrap);const el=document.createElement("div");el.className="bubble",el.tabIndex=-1,el.setAttribute("role","button"),opts.urgent&&el.classList.add("urgent");const ub=document.createElement("button");ub.className="bubble-urgent",ub.type="button",ub.textContent="!",ub.setAttribute("aria-label","Marcar como urgente"),ub.setAttribute("aria-pressed",opts.urgent?"true":"false");const fb=document.createElement("button");fb.className="bubble-focus",fb.type="button",fb.textContent="\u25C9",fb.title="Modo foco: ver solo esta y sus vecinas",fb.setAttribute("aria-label","Enfocar esta burbuja"),fb.addEventListener("click",e=>{e.stopPropagation(),focusId===b.id?exitFocus():enterFocus(b)});const nb=document.createElement("button");nb.className="bubble-note",nb.type="button",nb.title="Nota adjunta",nb.setAttribute("aria-label","Abrir nota adjunta"),nb.innerHTML=NOTE_ICON;const dn=document.createElement("button");dn.className="bubble-done",dn.type="button",dn.textContent="\u2713";const sh=document.createElement("button");sh.className="bubble-shape",sh.type="button",sh.textContent="\u{1F3B2}",sh.setAttribute("aria-label","Cambiar forma"),sh.title="Cambiar forma (todo curvo, nada recto)";const iconStr=normalizeIcon(opts.icon!=null?opts.icon:opts.i),ic=document.createElement("span");ic.className="bubble-icon",ic.setAttribute("aria-hidden","true"),iconStr&&(ic.textContent=iconStr);const sp=document.createElement("span");sp.className="bubble-text",sp.appendChild(renderBubbleText(text));const dl=document.createElement("button");dl.className="bubble-del",dl.type="button",dl.textContent="\xD7",dl.setAttribute("aria-label","Eliminar burbuja"),el.appendChild(ub),el.appendChild(fb),el.appendChild(ic),el.appendChild(sp),el.appendChild(dl),el.appendChild(nb),el.appendChild(dn),el.appendChild(sh),wrap.appendChild(el),iconStr&&el.classList.add("has-icon");const hue=opts.hue!=null?opts.hue:pickNewHue();wrap.style.setProperty("--hue",hue);const sc=opts.scale!=null?Math.max(MIN_SCALE,Math.min(MAX_SCALE,opts.scale)):1;wrap.style.setProperty("--bubble-scale",sc);const _shapeSeedId=opts.id||newId("b");const _shapeId=(opts.shape||opts.sh||opts.shapeId)&&BUBBLE_SHAPE_MAP[opts.shape||opts.sh||opts.shapeId]?(opts.shape||opts.sh||opts.shapeId):(opts.id?pickShapeForId(opts.id):pickRandomShapeId());applyShapeToEl(el,_shapeId,_shapeSeedId);const w=el.offsetWidth||120,h=el.offsetHeight||48;wrap.style.width=w+"px",wrap.style.height=h+"px";const rh=document.createElement("div");rh.className="bubble-resize",wrap.appendChild(rh);const __sp=(()=>{const sc=view.scale||1,hw=w/2,hh=h/2,rnd=(a,b)=>a+Math.random()*Math.max(0,b-a);let x0=Math.max(hw,(16-view.x)/sc+hw),x1=Math.min(W-hw,(W-16-view.x)/sc-hw);let y0=Math.max(topLimit+hh,(topLimit-view.y)/sc+hh),y1=Math.min(floorY-hh,(H*.55-view.y)/sc-hh);if(x1<x0){x0=hw;x1=Math.max(hw,W-hw)}if(y1<y0){y0=topLimit+hh;y1=Math.max(y0,Math.min(floorY-hh,H*.5))}return{x:rnd(x0,x1),y:rnd(y0,y1)}})();wrap.dataset.id=_shapeSeedId;const b={id:_shapeSeedId,shape:_shapeId,wrap,el,span:sp,iconEl:ic,resizeHandle:rh,text,icon:iconStr,hue,w,h,scale:sc,urgent:!!opts.urgent,done:!!opts.done,note:hasNote(opts.note)?opts.note:null,cx:opts.cx!=null?opts.cx:__sp.x,cy:opts.cy!=null?opts.cy:__sp.y,vx:opts.vx!=null?opts.vx:(Math.random()-.5)*1.2,vy:opts.vy!=null?opts.vy:Math.random()*1.5,eqRatio:.3+Math.random()*.6,phase:Math.random()*Math.PI*2,freq:.16+Math.random()*.22,dead:!1,dragging:!1,resizing:!1,dropTarget:null,groupId:opts.groupId||null,tags:Array.isArray(opts.tags)?opts.tags.slice(0,8):[],order:opts.order!=null?opts.order:null,status:opts.status||"",parentId:opts.parentId!=null?opts.parentId:(opts.p!=null?opts.p:null),olCollapsed:!!(opts.olCollapsed||opts.oc)};updateBubbleTagsUI(b),updateBubbleStatusUI(b),syncDoneUI(b),el.style.transform="rotate(0deg)",b.note&&el.classList.add("has-note"),wrap.style.transform=`translate3d(${(b.cx-w/2).toFixed(1)}px,${(b.cy-h/2).toFixed(1)}px,0)`;let ds=null;el.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"&&e.button!==0||e.target.closest&&e.target.closest(".bubble-del, .bubble-urgent, .bubble-done, .bubble-note, .bubble-focus, .bubble-shape, .bubble-link")||connectMode)return;if(e.shiftKey||e.ctrlKey||e.metaKey)e.preventDefault();const isMulti=b.el.classList.contains("selected")&&bubbles.filter(x=>!x.dead&&!x.groupId&&x.el.classList.contains("selected")).length>1;let multi=null;isMulti&&(multi=bubbles.filter(x=>!x.dead&&!x.groupId&&x.el.classList.contains("selected")).map(x=>({b:x,cx:x.cx,cy:x.cy})));const w0=clientToWorld(e.clientX,e.clientY);ds={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:w0.x-b.cx,oy:w0.y-b.cy,moved:!1,snap:snapshotState(),multi,alt:e.altKey,shift:e.shiftKey};try{el.setPointerCapture(e.pointerId)}catch(_){}}),el.addEventListener("pointermove",e=>{if(!ds||ds.id!==e.pointerId)return;const dx=e.clientX-ds.sx,dy=e.clientY-ds.sy;if(!ds.moved&&dx*dx+dy*dy>25&&(ds.moved=!0,b.dragging=!0,el.classList.add("dragging"),markBubbleWillChange(b,!0),ds.multi&&ds.multi.forEach(m=>{m.b!==b&&(m.b.dragging=!0,m.b.el.classList.add("dragging"),markBubbleWillChange(m.b,!0))})),ds.moved){const wd=clientDeltaToWorld(dx,dy);if(ds.multi)ds.multi.forEach(m=>{m.b.cx=m.cx+wd.x,m.b.cy=m.cy+wd.y;const hh=m.b.h/2;m.b.cy-hh<topLimit&&(m.b.cy=topLimit+hh),m.b.vx=0,m.b.vy=0});else{const w2=clientToWorld(e.clientX,e.clientY);b.cx=w2.x-ds.ox,b.cy=w2.y-ds.oy;const hh=b.h/2;b.cy-hh<topLimit&&(b.cy=topLimit+hh),b.vx=0,b.vy=0;try{setDropTarget(b,findDropTarget(b))}catch(_){}}}}),el.addEventListener("dblclick",e=>{if(window.__burbujasReadOnly||window.__burbujasPresenting)return;if(e.target.closest&&e.target.closest("a,.bubble-link,.bubble-del,.bubble-urgent,.bubble-done,.bubble-note,.bubble-focus,.bubble-shape,.bubble-resize"))return;e.preventDefault();e.stopPropagation();openEdit(b)});el.addEventListener("pointerup",e=>{if(!ds||ds.id!==e.pointerId)return;const was=ds.moved,snap=ds.snap,multi=ds.multi,wasAlt=ds.alt||e.altKey,wasShift=!!(ds.shift||e.shiftKey||e.ctrlKey||e.metaKey);ds=null;/* Sin arrastre real, o Shift/Ctrl aunque haya micro-movimiento: seleccionar */if(!was||wasShift&&!multi){if(wasAlt&&!wasShift){focusId===b.id?exitFocus():enterFocus(b);return}if(wasShift){const already=b.el.classList.contains("selected");if(!already){const any=bubbles.some(x=>!x.dead&&!x.groupId&&x.el.classList.contains("selected"));if(!any){const kb=typeof getKbFocus==="function"?getKbFocus():null;if(kb&&kb!==b&&!kb.dead&&!kb.groupId)kb.el.classList.add("selected")}b.el.classList.add("selected")}else b.el.classList.remove("selected");setKbFocus(b);updateSelectionToolbar();return}if(was){/* arrastre simple: cae al manejo de drag más abajo */}else{if(focusId){focusId===b.id?exitFocus():enterFocus(b);return}clearSelectedVisuals();b.el.classList.add("selected");setKbFocus(b);updateSelectionToolbar();return}}if(multi){multi.forEach(m=>{m.b.dragging=!1,m.b.el.classList.remove("dragging"),markBubbleWillChange(m.b,!1),m.b.vx=0,m.b.vy=0});let targetGroup=null;for(const g of groups)if(b.cx>g.x&&b.cx<g.x+g.w&&b.cy>g.y&&b.cy<g.y+g.h){targetGroup=g;break}pushSnapshot(snap),targetGroup?(multi.forEach(m=>{m.b.dead||m.b.groupId||(m.b.groupId=targetGroup.id,containBubble(m.b,targetGroup,!1))}),syncGroupsAfterBubbleChange(),clearSelectedVisuals(),saveAll(),showAutosaveToast("\u2713 Burbujas a\xF1adidas al grupo")):(saveAll(),updateSelectionToolbar());return}b.dragging=!1,b.vx=0,b.vy=0,el.classList.remove("dragging"),markBubbleWillChange(b,!1);const t=b.dropTarget;clearDropTarget(b);const isOutside=g=>!!g&&(b.cx<g.x||b.cx>g.x+g.w||b.cy<g.y||b.cy>g.y+g.h);if(t&&!t.dead){const g=getGroup(b.groupId);pushSnapshot(snap),g&&isOutside(g)?(b.groupId=null,syncGroupsAfterBubbleChange(),saveAll(),showAutosaveToast("\u2713 Burbuja liberada del grupo")):(g&&containBubble(b,g,!1),saveAll());openNewConnectionModal(b,t);return}const cur=getGroup(b.groupId);if(cur){if(isOutside(cur)){pushSnapshot(snap),b.groupId=null;for(const g of groups)if(g!==cur&&b.cx>g.x+8&&b.cx<g.x+g.w-8&&b.cy>g.y+8&&b.cy<g.y+g.h-8){b.groupId=g.id,containBubble(b,g,!1),syncGroupsAfterBubbleChange(),saveAll(),showAutosaveToast("\u2713 Burbuja movida al grupo");return}syncGroupsAfterBubbleChange(),saveAll(),showAutosaveToast("\u2713 Burbuja liberada del grupo")}else pushSnapshot(snap),containBubble(b,cur,!1),saveAll();return}for(const g of groups)if(b.cx>g.x+8&&b.cx<g.x+g.w-8&&b.cy>g.y+8&&b.cy<g.y+g.h-8){pushSnapshot(snap),b.groupId=g.id,containBubble(b,g,!1),saveAll(),showAutosaveToast("\u2713 Burbuja a\xF1adida al grupo");return}pushSnapshot(snap),saveAll()}),el.addEventListener("pointercancel",e=>{!ds||ds.id!==e.pointerId||(ds.multi&&ds.multi.forEach(m=>{m.b.dragging=!1,m.b.el.classList.remove("dragging")}),ds=null,b.dragging=!1,b.vx=0,b.vy=0,el.classList.remove("dragging"),markBubbleWillChange(b,!1),clearDropTarget(b))});let rs=null;return rh.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"&&e.button!==0)return;e.stopPropagation(),e.preventDefault();const dx=e.clientX-b.cx,dy=e.clientY-b.cy,sd=Math.sqrt(dx*dx+dy*dy)||1;rs={id:e.pointerId,ss:b.scale,sd,snap:snapshotState()},b.resizing=!0,el.classList.add("resizing"),markBubbleWillChange(b,!0);try{rh.setPointerCapture(e.pointerId)}catch(_){}}),rh.addEventListener("pointermove",e=>{if(!rs||rs.id!==e.pointerId)return;const dx=e.clientX-b.cx,dy=e.clientY-b.cy,d=Math.sqrt(dx*dx+dy*dy);let ns=rs.ss*(d/rs.sd);ns=Math.max(MIN_SCALE,Math.min(MAX_SCALE,ns)),b.scale=ns,b._forceRemeasure=!0,wrap.style.setProperty("--bubble-scale",ns),remeasure(b)}),rh.addEventListener("pointerup",e=>{if(!rs||rs.id!==e.pointerId)return;const changed=b.scale!==rs.ss,snap=rs.snap;if(rs=null,b.resizing=!1,el.classList.remove("resizing"),markBubbleWillChange(b,!1),changed){const g=getGroup(b.groupId);g&&containBubble(b,g,!1),pushSnapshot(snap),saveAll()}}),rh.addEventListener("pointercancel",e=>{!rs||rs.id!==e.pointerId||(rs=null,b.resizing=!1,el.classList.remove("resizing"),markBubbleWillChange(b,!1))}),dl.addEventListener("click",e=>{e.stopPropagation(),pop(b)}),ub.addEventListener("click",e=>{e.stopPropagation(),toggleUrgent(b)}),dn.addEventListener("click",e=>{e.stopPropagation(),toggleDone(b)}),sh.addEventListener("click",e=>{e.stopPropagation(),cycleBubbleShape(b)}),nb.addEventListener("click",e=>{e.stopPropagation(),openNote(b)}),bubbles.push(b),b}function toggleUrgent(b){if(!b||b.dead)return;pushUndo(),b.urgent=!b.urgent,b.el.classList.toggle("urgent",b.urgent);const btn=b.el.querySelector(".bubble-urgent");btn&&btn.setAttribute("aria-pressed",b.urgent?"true":"false"),saveAll()}function syncDoneUI(b){if(!b||!b.el)return;b.el.classList.toggle("done",!!b.done);const btn=b.el.querySelector(".bubble-done");if(btn){const t=b.done?"Hecha \xB7 toc\xE1 para volver a pendiente":"Marcar como hecha";btn.setAttribute("aria-pressed",b.done?"true":"false"),btn.title=t,btn.setAttribute("aria-label",t)}}function toggleDone(b){!b||b.dead||(pushUndo(),b.done=!b.done,syncDoneUI(b),saveAll())}function pop(b,skipUndo){if(!b||b.dead)return;skipUndo||pushUndo(),bubbles.forEach(ch=>{if(!ch.dead&&ch.parentId===b.id)ch.parentId=b.parentId||null}),kbFocusId===b.id&&clearKbFocus(),b.dead=!0,b.dropTarget&&(b.dropTarget.el.classList.remove("drop-target"),b.dropTarget=null),currentHoverTarget===b&&(currentHoverTarget=null),b.el.classList.add("pop"),setTimeout(()=>b.wrap.remove(),460);for(let i2=connections.length-1;i2>=0;i2--)(connections[i2].a===b||connections[i2].b===b)&&removeConnection(connections[i2],!0);const i=bubbles.indexOf(b);i>-1&&bubbles.splice(i,1),syncGroupsAfterBubbleChange(),saveAll(),b.note&&saveNotes(),updateSelectionToolbar()}function openNewConnectionModal(a,b){pendingConnection={a,b},editingConnection=null,pendingGroupConnection=null,editingGroupConnection=null,connTitle.textContent="Nueva conexi\xF3n",connInfo.innerHTML=esc(truncate(a.text))+'<span class="arrow">\u21C4</span>'+esc(truncate(b.text)),connLabel.value="",setConnDir(0),setConnType(""),connMultiHint(pendingConnection),connError.textContent="",connDelete.style.display="none",connModal.classList.add("is-open"),requestAnimationFrame(()=>connLabel.focus({preventScroll:!0}))}function openEditConnectionModal(c){pendingConnection=null,editingConnection=c,pendingGroupConnection=null,editingGroupConnection=null,connTitle.textContent="Editar conexi\xF3n",connInfo.innerHTML=esc(truncate(c.a.text))+'<span class="arrow">\u21C4</span>'+esc(truncate(c.b.text)),connLabel.value=c.label||"",setConnDir(c.dir),setConnType(c.type),connMultiHint(null),connDirNames(truncate(c.a.text,24),truncate(c.b.text,24)),connError.textContent="",connDelete.style.display="",connModal.classList.add("is-open"),requestAnimationFrame(()=>{connLabel.focus({preventScroll:!0}),connLabel.select()})}function openNewGroupConnectionModal(a,b){pendingConnection=null,editingConnection=null,pendingGroupConnection={a,b},editingGroupConnection=null,connTitle.textContent="Nueva conexi\xF3n entre burbujas madre",connInfo.innerHTML=esc(truncate(a.title,40))+'<span class="arrow">\u21C4</span>'+esc(truncate(b.title,40)),connLabel.value="",setConnDir(0),setConnType(""),connMultiHint(pendingConnection),connError.textContent="",connDelete.style.display="none",connModal.classList.add("is-open"),requestAnimationFrame(()=>connLabel.focus({preventScroll:!0}))}function openEditGroupConnectionModal(gc){pendingConnection=null,editingConnection=null,pendingGroupConnection=null,editingGroupConnection=gc,connTitle.textContent="Editar conexi\xF3n entre burbujas madre",connInfo.innerHTML=esc(truncate(gc.a.title,40))+'<span class="arrow">\u21C4</span>'+esc(truncate(gc.b.title,40)),connLabel.value=gc.label||"",setConnDir(gc.dir),setConnType(gc.type),connMultiHint(null),connDirNames(truncate(gc.a.title,24),truncate(gc.b.title,24)),connError.textContent="",connDelete.style.display="",connModal.classList.add("is-open"),requestAnimationFrame(()=>{connLabel.focus({preventScroll:!0}),connLabel.select()})}function closeConnModal(){connModal.classList.remove("is-open"),pendingConnection=null,editingConnection=null,pendingGroupConnection=null,editingGroupConnection=null}function saveConnection(){const l=connLabel.value.trim();if(editingConnection){if(editingConnection.label===l&&(editingConnection.dir|0)===connDirSel&&(editingConnection.type||"")===connTypeSel){closeConnModal();return}pushUndo(),editingConnection.label=l,editingConnection.dir=connDirSel,editingConnection.type=connTypeSel,applyLinkDir(editingConnection),applyRelType(editingConnection),updateLabelUI(editingConnection)}else if(editingGroupConnection){if(editingGroupConnection.label===l&&(editingGroupConnection.dir|0)===connDirSel&&(editingGroupConnection.type||"")===connTypeSel){closeConnModal();return}pushUndo(),editingGroupConnection.label=l,editingGroupConnection.dir=connDirSel,editingGroupConnection.type=connTypeSel,applyLinkDir(editingGroupConnection),applyRelType(editingGroupConnection),updateGroupLabelUI(editingGroupConnection)}else if(pendingConnection){const a=pendingConnection.a,b=pendingConnection.b;pushUndo(),createConnection(a,b,l,{dir:connDirSel,type:connTypeSel,multi:!0})}else if(pendingGroupConnection){const a=pendingGroupConnection.a,b=pendingGroupConnection.b;if(groupConnections.find(c=>c.a===a&&c.b===b||c.a===b&&c.b===a)){closeConnModal();return}pushUndo(),createGroupConnection(a,b,l,{dir:connDirSel,type:connTypeSel})}closeConnModal(),saveAll()}function deleteConnectionAction(){editingConnection?(pushUndo(),removeConnection(editingConnection),closeConnModal()):editingGroupConnection&&(pushUndo(),removeGroupConnection(editingGroupConnection),closeConnModal())}connLabel.addEventListener("input",()=>{connError.textContent=""}),connLabel.addEventListener("keydown",e=>{e.key==="Enter"&&(e.preventDefault(),saveConnection())}),document.querySelectorAll("#conn-dir button").forEach(b=>b.addEventListener("click",()=>setConnDir(+b.dataset.dir))),connSave.addEventListener("click",saveConnection),connCancel.addEventListener("click",closeConnModal),connDelete.addEventListener("click",deleteConnectionAction),connModal.addEventListener("click",e=>{e.target===connModal&&closeConnModal()});function clamp(v,min,max){return Math.max(min,Math.min(max,v))}function getGroup(id){return id&&groups.find(g=>g.id===id)||null}function placeGroup(g){!g||!g.el||(g.el.style.left=g.x+"px",g.el.style.top=g.y+"px",g.el.style.width=g.w+"px",g.el.style.height=g.h+"px")}function applyGroupCollapsedVisuals(g){if(!g||!g.el)return;const collapsed=!!g.collapsed;g.el.classList.toggle("collapsed",collapsed);const btn=g.el.querySelector(".mother-collapse");btn&&(btn.textContent=collapsed?"\u25B6":"\u25BC",btn.title=collapsed?"Expandir grupo":"Colapsar a chip",btn.setAttribute("aria-label",btn.title),btn.setAttribute("aria-expanded",collapsed?"false":"true"));const members=groupMembers(g),n=members.length;g.titleEl&&(collapsed?g.titleEl.textContent=(g.title||"Grupo")+(n?" \xB7 "+n:""):g.titleEl.textContent=g.title||"Grupo"),members.forEach(b=>{b.wrap&&b.wrap.classList.toggle("in-collapsed",collapsed)}),connections.forEach(c=>{const aIn=c.a.groupId===g.id,bIn=c.b.groupId===g.id,hide=collapsed&&aIn&&bIn;c.pathEl.classList.toggle("in-collapsed-link",hide),c.labelEl.classList.toggle("in-collapsed-link",hide)})}function setGroupCollapsed(g,collapsed,opts={}){if(!(!g||!!g.collapsed==!!collapsed)){if(opts.silent||pushUndo(),collapsed){g.expandedW=g.w,g.expandedH=g.h,g.expandedX=g.x,g.expandedY=g.y;const label=g.title||"Grupo",chipW=clamp(Math.max(150,Math.min(280,label.length*8+90)),150,Math.min(320,W-16)),chipH=44,cx=g.x+g.w/2,cy=g.y+g.h/2;g.w=chipW,g.h=chipH,g.x=clamp(cx-chipW/2,8,Math.max(8,W-chipW-8)),g.y=clamp(cy-chipH/2,topLimit,Math.max(topLimit,floorY+18-chipH)),g.collapsed=!0}else{const cx=g.x+g.w/2,cy=g.y+g.h/2;g.w=Number.isFinite(g.expandedW)?g.expandedW:Math.max(260,g.w),g.h=Number.isFinite(g.expandedH)?g.expandedH:Math.max(190,g.h),g.x=clamp(cx-g.w/2,8,Math.max(8,W-g.w-8)),g.y=clamp(cy-g.h/2,topLimit,Math.max(topLimit,floorY+18-g.h)),g.collapsed=!1,groupMembers(g).forEach(b=>containBubble(b,g,!1))}applyGroupCollapsedVisuals(g),placeGroup(g),opts.silent||(saveAll(),showAutosaveToast(collapsed?"\u2713 Grupo colapsado":"\u2713 Grupo expandido"))}}function toggleGroupCollapsed(g){g&&setGroupCollapsed(g,!g.collapsed)}function groupMembers(g){return g?(g._membersCache&&g._membersGen===membersGen||(g._membersCache=bubbles.filter(b=>!b.dead&&b.groupId===g.id),g._membersGen=membersGen),g._membersCache):[]}let membersGen=0;function invalidateMembersCache(){membersGen++}function gSaveW(g){return g._fitW===g.w&&g._wantW>g.w?g._wantW:g.w}function gSaveH(g){return g._fitH===g.h&&g._wantH>g.h?g._wantH:g.h}function fitGroupsToViewport(){for(const g of groups){(g._fitW!==g.w||g._fitH!==g.h)&&(g._wantW=g.w,g._wantH=g.h);const ox=g.x,oy=g.y,ow=g.w,oh=g.h;g.w=Math.min(g._wantW,Math.max(150,W-16)),g.h=Math.min(g._wantH,Math.max(150,Math.min(H-16,floorY+22))),g._fitW=g.w,g._fitH=g.h,g.x=clamp(g.x+(ow-g.w)/2,8,Math.max(8,W-g.w-8)),g.y=clamp(g.y+(oh-g.h)/2,topLimit,Math.max(topLimit,floorY+18-g.h));const dx=g.x-ox,dy=g.y-oy;groupMembers(g).forEach(b=>{b.cx+=dx,b.cy+=dy}),placeGroup(g),groupMembers(g).forEach(b=>containBubble(b,g,!1))}}function containBubble(b,g,bounce=!0){if(!b||!g)return;const hw=(b.w||100)/2,hh=(b.h||40)/2,minX=g.x+GROUP_PAD+hw,maxX=g.x+g.w-GROUP_PAD-hw,minY=g.y+GROUP_HEADER+hh+2,maxY=g.y+g.h-GROUP_PAD-hh;maxX<minX?(b.cx=g.x+g.w/2,b.vx=0):b.cx<minX?(b.cx=minX,bounce&&(b.vx=Math.abs(b.vx)*.55)):b.cx>maxX&&(b.cx=maxX,bounce&&(b.vx=-Math.abs(b.vx)*.55)),maxY<minY?(b.cy=g.y+GROUP_HEADER+(g.h-GROUP_HEADER)/2,b.vy=0):b.cy<minY?(b.cy=minY,bounce&&(b.vy=Math.abs(b.vy)*.55)):b.cy>maxY&&(b.cy=maxY,bounce&&(b.vy=-Math.abs(b.vy)*.55))}function translateGroup(g,dx,dy){if(!(!g||dx===0&&dy===0)){g.x+=dx,g.y+=dy;for(const b of groupMembers(g))b.cx+=dx,b.cy+=dy;placeGroup(g)}}function resolveGroupBubble(g,b,dt){if(!g||!g.el||g.dragging||g.resizing||!b||b.dead||b.groupId||b.dragging||b.resizing)return;const hw=(b.w||100)/2,hh=(b.h||40)/2,pad=g.collapsed?12:18,minX=g.x-pad,maxX=g.x+g.w+pad,minY=g.y-pad,maxY=g.y+g.h+pad,cx=b.cx,cy=b.cy;if(cx+hw<minX||cx-hw>maxX||cy+hh<minY||cy-hh>maxY)return;let px=0,py=0,depth=0;const nx=Math.max(minX,Math.min(maxX,cx)),ny=Math.max(minY,Math.min(maxY,cy)),dx=cx-nx,dy=cy-ny,dist=Math.sqrt(dx*dx+dy*dy);if(dist<1e-4){const dl=cx-minX,dr=maxX-cx,dtp=cy-minY,db=maxY-cy,m=Math.min(dl,dr,dtp,db);m===dl?(px=-1,py=0,depth=dl+hw):m===dr?(px=1,py=0,depth=dr+hw):m===dtp?(px=0,py=-1,depth=dtp+hh):(px=0,py=1,depth=db+hh)}else{const ux=dx/dist,uy=dy/dist;if(depth=1/Math.sqrt(ux*ux/(hw*hw)+uy*uy/(hh*hh))-dist,depth<=.05)return;px=ux,py=uy}const wantX=cx+px*depth,wantY=cy+py*depth,tx=Math.max(hw,Math.min(W-hw,wantX)),ty=Math.max(topLimit+hh,Math.min(floorY-hh,wantY));b.cx=tx,b.cy=ty;const rx=wantX-tx,ry=wantY-ty;if(Math.abs(rx)>.01||Math.abs(ry)>.01){const gdx=px*rx,gdy=py*ry;translateGroup(g,gdx,gdy),gdx>0&&g.vx<0?g.vx=Math.abs(g.vx):gdx<0&&g.vx>0&&(g.vx=-Math.abs(g.vx)),gdy>0&&g.vy<0?g.vy=Math.abs(g.vy):gdy<0&&g.vy>0&&(g.vy=-Math.abs(g.vy))}const kick=Math.min(depth*.5,10);b.vx+=px*kick,b.vy+=py*kick}function resolveGroupPair(a,b,dt){if(!a||!b||!a.el||!b.el||a.dragging||b.dragging||a.resizing||b.resizing||groupConnections.some(gc=>gc.a===a&&gc.b===b||gc.a===b&&gc.b===a))return;const ox=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x),oy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);if(!(ox<=0||oy<=0))if(ox<oy){const dir=a.x+a.w/2<b.x+b.w/2?-1:1,push=ox*.78+2.5;translateGroup(a,dir*push,0),translateGroup(b,-dir*push,0),dir<0?(a.vx>0&&(a.vx=-Math.abs(a.vx)*1.4),b.vx<0&&(b.vx=Math.abs(b.vx)*1.4)):(a.vx<0&&(a.vx=Math.abs(a.vx)*1.4),b.vx>0&&(b.vx=-Math.abs(b.vx)*1.4))}else{const dir=a.y+a.h/2<b.y+b.h/2?-1:1,push=oy*.78+2.5;translateGroup(a,0,dir*push),translateGroup(b,0,-dir*push),dir<0?(a.vy>0&&(a.vy=-Math.abs(a.vy)*1.4),b.vy<0&&(b.vy=Math.abs(b.vy)*1.4)):(a.vy<0&&(a.vy=Math.abs(a.vy)*1.4),b.vy>0&&(b.vy=-Math.abs(b.vy)*1.4))}}let kbFocusId=null;function getKbFocus(){return kbFocusId&&bubbles.find(b=>b.id===kbFocusId&&!b.dead)||null}function setKbFocus(b){const prev=getKbFocus();if(prev&&prev.el&&prev.el.classList.remove("kb-focus"),!b||b.dead){kbFocusId=null;return}kbFocusId=b.id,b.el.classList.add("kb-focus");try{b.el.focus({preventScroll:!0})}catch(_){}}function clearKbFocus(){const prev=getKbFocus();prev&&prev.el&&prev.el.classList.remove("kb-focus"),kbFocusId=null}function navigableBubbles(){let list=bubbles.filter(b=>!b.dead);if(searchState&&searchState.active&&searchState.hits&&searchState.hits.length){const hitIds=new Set(searchState.hits.map(b=>b.id));list=list.filter(b=>hitIds.has(b.id))}if(focusId){const focused=bubbles.find(b=>b.id===focusId&&!b.dead);if(focused){const allow=new Set([focused.id]);connections.forEach(c=>{c.a===focused?allow.add(c.b.id):c.b===focused&&allow.add(c.a.id)}),focused.groupId&&bubbles.forEach(b=>{!b.dead&&b.groupId===focused.groupId&&allow.add(b.id)}),list=list.filter(b=>allow.has(b.id))}}return list}function sortBubblesReadingOrder(list){return list.slice().sort((a,b)=>a.cy-b.cy||a.cx-b.cx||String(a.id).localeCompare(String(b.id)))}function nearestBubble(from,dir){const list=navigableBubbles();if(!list.length)return null;if(!from)return sortBubblesReadingOrder(list)[0];const cand=list.filter(b=>b!==from);if(!cand.length)return from;const ax=from.cx,ay=from.cy;let best=null,bestScore=1/0;for(const b of cand){const dx=b.cx-ax,dy=b.cy-ay;let ok=!1,primary=0,secondary=0;if(dir==="right"?(ok=dx>4,primary=dx,secondary=Math.abs(dy)):dir==="left"?(ok=dx<-4,primary=-dx,secondary=Math.abs(dy)):dir==="down"?(ok=dy>4,primary=dy,secondary=Math.abs(dx)):dir==="up"&&(ok=dy<-4,primary=-dy,secondary=Math.abs(dx)),!ok)continue;const score=primary*primary+secondary*secondary*2.8;score<bestScore&&(bestScore=score,best=b)}if(best)return best;const ordered=sortBubblesReadingOrder(list);return dir==="right"||dir==="down"?ordered[0]:ordered[ordered.length-1]}function stepKbFocus(dir){const cur=getKbFocus(),next=nearestBubble(cur,dir);if(next&&(setKbFocus(next),searchState&&searchState.active&&searchCenterChk&&searchCenterChk.checked))try{centerSearchHit(next)}catch(_){}}function kbTargetOk(){return!(lockScreen.classList.contains("is-visible")||inlineCreator||connectMode||modal.classList.contains("is-open")||connModal.classList.contains("is-open")||passModal.classList.contains("is-open")||noteModal.classList.contains("is-open")||lightbox.classList.contains("is-open")||exportModal.classList.contains("is-open")||helpModal&&helpModal.classList.contains("is-open"))}function isTypingTarget(t){if(!t)return!1;const tag=t.tagName;return!!(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT"||t.isContentEditable)}document.addEventListener("keydown",e=>{if(!kbTargetOk()||isTypingTarget(e.target)||e.ctrlKey||e.metaKey||e.altKey&&!e.shiftKey)return;const k=e.key;if(k==="ArrowRight"||k==="ArrowLeft"||k==="ArrowUp"||k==="ArrowDown"){if(e.preventDefault(),e.shiftKey){const step=e.altKey?24:8,dx=k==="ArrowRight"?step:k==="ArrowLeft"?-step:0,dy=k==="ArrowDown"?step:k==="ArrowUp"?-step:0;nudgeBubbles(dx,dy);return}stepKbFocus(k==="ArrowRight"?"right":k==="ArrowLeft"?"left":k==="ArrowUp"?"up":"down");return}if(k==="Home"){e.preventDefault();const list=sortBubblesReadingOrder(navigableBubbles());list.length&&setKbFocus(list[0]);return}if(k==="End"){e.preventDefault();const list=sortBubblesReadingOrder(navigableBubbles());list.length&&setKbFocus(list[list.length-1]);return}if(k==="Enter"||k==="F2"){const b=getKbFocus();if(!b)return;e.preventDefault(),openEdit(b);return}if(k==="!"||k==="1"&&e.shiftKey){const b=getKbFocus();if(!b)return;e.preventDefault(),toggleUrgent(b);return}});function modalFocusables(root){return root?[...root.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(el=>el.offsetParent!==null||el===document.activeElement):[]}function trapModalTab(e,modalEl,cardSel){if(e.key!=="Tab"||!modalEl.classList.contains("is-open"))return;const card=modalEl.querySelector(cardSel||".modal-card")||modalEl,list=modalFocusables(card);if(list.length<1)return;const first=list[0],last2=list[list.length-1];e.shiftKey?(document.activeElement===first||!card.contains(document.activeElement))&&(e.preventDefault(),last2.focus()):(document.activeElement===last2||!card.contains(document.activeElement))&&(e.preventDefault(),first.focus())}document.addEventListener("keydown",e=>{modal.classList.contains("is-open")?trapModalTab(e,modal):connModal.classList.contains("is-open")?trapModalTab(e,connModal):passModal.classList.contains("is-open")?trapModalTab(e,passModal):noteModal.classList.contains("is-open")?trapModalTab(e,noteModal):exportModal.classList.contains("is-open")?trapModalTab(e,exportModal):helpModal&&helpModal.classList.contains("is-open")&&trapModalTab(e,helpModal)});function getSelectedBubbles(){return bubbles.filter(b=>!b.dead&&!b.groupId&&b.el.classList.contains("selected"))}function selectAllFreeBubbles(){let n=0;bubbles.forEach(b=>{b.dead||b.groupId||(b.el.classList.add("selected"),n++)}),updateSelectionToolbar(),n&&showAutosaveToast(n+" seleccionadas")}function duplicateBubble(b,offset){if(!b||b.dead)return null;const o=offset!=null?offset:28;let note=null;return hasNote(b.note)&&(note={t:b.note.t||"",l:(b.note.l||[]).map(l=>({url:l.url,title:l.title||""})),i:(b.note.i||[]).slice(),f:(b.note.f||[]).map(m=>({id:m.id,name:m.name,type:m.type,size:m.size}))}),addBubble(b.text,{hue:b.hue,urgent:!!b.urgent,done:!!b.done,scale:b.scale,cx:b.cx+o,cy:b.cy+o,note,icon:b.icon||"",tags:Array.isArray(b.tags)?b.tags.slice():[],groupId:b.groupId||null,parentId:b.parentId||null,vx:0,vy:0,shape:b.shape||""})}function duplicateSelectedOrFocused(){let list=getSelectedBubbles();if(!list.length){const kb=typeof getKbFocus=="function"?getKbFocus():null;kb&&!kb.groupId&&(list=[kb])}if(!list.length)return;pushUndo();const created=[];list.forEach((b,i)=>{const nb=duplicateBubble(b,24+i*6);nb&&created.push(nb)}),clearSelectedVisuals(),created.forEach(b=>b.el.classList.add("selected")),created[0]&&setKbFocus(created[0]),updateSelectionToolbar(),saveAll(),created.length&&(playBubbleSound(),showAutosaveToast(created.length===1?"\u2713 Burbuja duplicada":"\u2713 "+created.length+" burbujas duplicadas"))}function nudgeBubbles(dx,dy){let list=getSelectedBubbles();if(!list.length){const kb=typeof getKbFocus=="function"?getKbFocus():null;kb&&(list=[kb])}list.length&&(pushUndo(),list.forEach(b=>{b.cx+=dx,b.cy+=dy,b.vx=0,b.vy=0;const g=getGroup(b.groupId);if(g&&!g.collapsed)containBubble(b,g,!1);else{const hw=(b.w||40)/2,hh=(b.h||24)/2;b.cx=Math.max(hw,Math.min(W-hw,b.cx)),b.cy=Math.max(topLimit+hh,Math.min(floorY-hh,b.cy))}b._lx=null}),saveAll())}function selExtraG(){return groups.filter(g=>g.el&&g.el.classList.contains("selected"))}function selExtraP(){return(typeof postits!="undefined"?postits:[]).filter(p=>p.el&&p.el.classList.contains("selected"))}function clearSelectedVisuals(){bubbles.forEach(b=>b.el.classList.remove("selected")),groups.forEach(g=>g.el&&g.el.classList.remove("selected")),typeof postits!="undefined"&&postits.forEach(p=>p.el&&p.el.classList.remove("selected")),updateSelectionToolbar()}function removeMotherGroup(g,dissolve=!0){if(!g)return;invalidateMembersCache();for(let i2=groupConnections.length-1;i2>=0;i2--)(groupConnections[i2].a===g||groupConnections[i2].b===g)&&removeGroupConnection(groupConnections[i2],!0);const i=groups.indexOf(g);i>=0&&groups.splice(i,1),g.el&&g.el.remove(),dissolve&&bubbles.forEach(b=>{b.groupId===g.id&&(b.groupId=null)})}function syncGroupsAfterBubbleChange(){invalidateMembersCache();for(const g of[...groups]){const members=groupMembers(g);g.members=members.map(b=>b.id),members.length<2?removeMotherGroup(g,!0):applyGroupCollapsedVisuals(g)}}function enterConnectMode(sourceGroup){const others=groups.filter(gr=>gr!==sourceGroup&&!gr.dead);if(!others.length){showAutosaveToast("No hay otra burbuja madre para conectar");return}exitConnectMode(),connectMode={source:sourceGroup},sourceGroup.el.classList.add("connecting-source");const btn=sourceGroup.el.querySelector(".mother-connect");btn&&btn.classList.add("connecting"),others.forEach(gr=>{gr.el.classList.add("connecting-target")}),setTimeout(()=>{connectMode&&document.addEventListener("click",connectModeCancel,!0)},0)}function connectModeCancel(e){if(!connectMode)return;const t=e.target;t&&t.closest&&(t.closest(".connecting-target")||t.closest(".mother-connect")||t.closest(".mother-group"))||exitConnectMode()}function exitConnectMode(){if(connectMode){if(document.removeEventListener("click",connectModeCancel,!0),connectMode.source&&connectMode.source.el){connectMode.source.el.classList.remove("connecting-source");const btn=connectMode.source.el.querySelector(".mother-connect");btn&&btn.classList.remove("connecting")}groups.forEach(gr=>{gr.el&&gr.el.classList.remove("connecting-target")}),connectMode=null}}function createMotherGroup(memberBubbles,title,opts={}){const members=[...new Set((memberBubbles||[]).filter(b=>b&&!b.dead&&bubbles.includes(b)))];if(members.length<1||members.length<2&&!opts.allowSingle)return null;const minL=Math.min(...members.map(b=>b.cx-b.w/2)),maxR=Math.max(...members.map(b=>b.cx+b.w/2)),minT=Math.min(...members.map(b=>b.cy-b.h/2)),maxB=Math.max(...members.map(b=>b.cy+b.h/2)),maxW=Math.max(150,W-16),maxH=Math.max(150,Math.min(H-16,floorY+22));let w=Number.isFinite(opts.w)?opts.w:Math.max(260,maxR-minL+64);w=clamp(w,Math.min(190,maxW),maxW);let h=Number.isFinite(opts.h)?opts.h:Math.max(190,maxB-minT+78);h=clamp(h,Math.min(170,maxH),maxH);let x=Number.isFinite(opts.x)?opts.x:(minL+maxR-w)/2,y=Number.isFinite(opts.y)?opts.y:(minT+maxB-h)/2;x=clamp(x,8,Math.max(8,W-w-8)),y=clamp(y,topLimit,Math.max(topLimit,floorY+18-h));const hue=opts.hue!=null?opts.hue:Math.round(members.reduce((s,b)=>s+b.hue,0)/members.length),g={id:opts.id||newId("g"),title:String(title||"Nuevo grupo").trim()||"Nuevo grupo",x,y,w,h,hue,members:members.map(b=>b.id),el:null,titleEl:null,handle:null,dragging:!1,resizing:!1,collapsed:!!opts.collapsed,olCollapsed:!!(opts.olCollapsed||opts.oc),expandedW:Number.isFinite(opts.expandedW)?opts.expandedW:w,expandedH:Number.isFinite(opts.expandedH)?opts.expandedH:h,vx:Number.isFinite(opts.vx)?opts.vx:(Math.random()<.5?-1:1)*(2.125+Math.random()*2.125),vy:Number.isFinite(opts.vy)?opts.vy:(Math.random()<.5?-1:1)*(.85+Math.random()*1.275)},el=document.createElement("div");el.className="mother-group",el.setAttribute("data-group-id",g.id);const handle=document.createElement("button");handle.type="button",handle.className="mother-handle",handle.title="Arrastrar el grupo completo (solt\xE1 sobre otra madre para conectarlas)",handle.setAttribute("aria-label","Mover grupo"),handle.textContent="\u283F";const connectBtn=document.createElement("button");connectBtn.type="button",connectBtn.className="mother-connect",connectBtn.title="Conectar con otra burbuja madre",connectBtn.setAttribute("aria-label","Conectar con otra burbuja madre"),connectBtn.textContent="\u{1F517}",connectBtn.addEventListener("click",e=>{if(e.stopPropagation(),e.preventDefault(),connectMode&&connectMode.source===g){exitConnectMode();return}if(connectMode){const src=connectMode.source;exitConnectMode();const ex=groupConnections.find(c=>c.a===src&&c.b===g||c.a===g&&c.b===src);ex?openEditGroupConnectionModal(ex):openNewGroupConnectionModal(src,g);return}enterConnectMode(g)});const titleEl2=document.createElement("div");titleEl2.className="mother-group-title",titleEl2.textContent=g.title,titleEl2.title="Clic para cambiar el t\xEDtulo",titleEl2.setAttribute("role","textbox"),titleEl2.setAttribute("aria-label","T\xEDtulo del grupo");const delBtn=document.createElement("button");delBtn.type="button",delBtn.className="mother-del",delBtn.textContent="\xD7",delBtn.title="Eliminar grupo",delBtn.setAttribute("aria-label","Eliminar grupo"),delBtn.addEventListener("click",e=>{e.stopPropagation(),e.preventDefault(),confirm('\xBFEliminar la burbuja madre "'+g.title+`"?
 Las burbujas de adentro quedar\xE1n libres.`)&&(pushUndo(),removeMotherGroup(g,!0),saveAll())});const resizeHandle=document.createElement("button");resizeHandle.type="button",resizeHandle.className="mother-resize",resizeHandle.title="Redimensionar burbuja madre",resizeHandle.setAttribute("aria-label","Redimensionar burbuja madre");const collapseBtn=document.createElement("button");collapseBtn.type="button",collapseBtn.className="mother-collapse",collapseBtn.textContent="\u25BC",collapseBtn.title="Colapsar a chip",collapseBtn.setAttribute("aria-label","Colapsar a chip"),collapseBtn.setAttribute("aria-expanded","true"),collapseBtn.addEventListener("click",e=>{e.stopPropagation(),e.preventDefault(),toggleGroupCollapsed(g)}),el.append(handle,connectBtn,titleEl2,collapseBtn,delBtn,resizeHandle),scene.appendChild(el),g.el=el,g.titleEl=titleEl2,g.handle=handle,groups.push(g),placeGroup(g),members.forEach(b=>{b.groupId=g.id,containBubble(b,g,!1)}),g.collapsed&&applyGroupCollapsedVisuals(g),el.addEventListener("dblclick",e=>{g.collapsed&&(e.target.closest&&e.target.closest(".mother-handle,.mother-collapse")||(e.stopPropagation(),e.preventDefault(),toggleGroupCollapsed(g)))}),el.addEventListener("click",e=>{if(g.collapsed&&!connectMode||!connectMode||connectMode.source===g)return;e.stopPropagation(),e.preventDefault();const src=connectMode.source;exitConnectMode();const ex=groupConnections.find(c=>c.a===src&&c.b===g||c.a===g&&c.b===src);ex?openEditGroupConnectionModal(ex):openNewGroupConnectionModal(src,g)}),titleEl2.addEventListener("click",e=>{if(e.stopPropagation(),g.collapsed){e.preventDefault(),toggleGroupCollapsed(g);return}titleEl2.isContentEditable||(titleEl2.contentEditable="true",titleEl2.dataset.original=g.title,requestAnimationFrame(()=>{titleEl2.focus({preventScroll:!0});const r=document.createRange();r.selectNodeContents(titleEl2);const sel=window.getSelection();sel.removeAllRanges(),sel.addRange(r)}))}),titleEl2.addEventListener("keydown",e=>{e.key==="Enter"?(e.preventDefault(),titleEl2.blur()):e.key==="Escape"&&(e.preventDefault(),titleEl2.dataset.cancel="1",titleEl2.blur())}),titleEl2.addEventListener("blur",()=>{if(!titleEl2.isContentEditable)return;titleEl2.contentEditable="false";const cancelled=titleEl2.dataset.cancel==="1";if(delete titleEl2.dataset.cancel,cancelled){titleEl2.textContent=g.title;return}const next=(titleEl2.textContent||"").replace(/[\r\n\t]+/g," ").trim().slice(0,100)||"Grupo";next!==g.title&&(pushUndo(),g.title=next,titleEl2.textContent=next,saveAll())});let move=null;handle.addEventListener("pointerdown",e=>{if(e.button===0){e.preventDefault(),e.stopPropagation(),move={id:e.pointerId,sx:e.clientX,sy:e.clientY,gx:g.x,gy:g.y,snap:snapshotState(),changed:!1,connectTarget:null,lastTarget:null},g.dragging=!0,el.classList.add("dragging");try{handle.setPointerCapture(e.pointerId)}catch(_){}}}),handle.addEventListener("pointermove",e=>{if(!move||e.pointerId!==move.id)return;const nx=clamp(move.gx+e.clientX-move.sx,8,Math.max(8,W-g.w-8)),ny=clamp(move.gy+e.clientY-move.sy,topLimit,Math.max(topLimit,floorY+18-g.h)),dx=nx-g.x,dy=ny-g.y;Math.abs(dx)+Math.abs(dy)>.1&&(move.changed=!0),g.x=nx,g.y=ny,groupMembers(g).forEach(b=>{b.dragging||b.resizing||(b.cx+=dx,b.cy+=dy)}),placeGroup(g);let target=null;for(const o of groups){if(o===g||o.dead)continue;const ox=Math.min(g.x+g.w,o.x+o.w)-Math.max(g.x,o.x),oy=Math.min(g.y+g.h,o.y+o.h)-Math.max(g.y,o.y);if(ox>0&&oy>0&&ox*oy>g.w*g.h*.12){target=o;break}}move.lastTarget&&move.lastTarget!==target&&move.lastTarget.el.classList.remove("target-connect"),target&&target.el.classList.add("target-connect"),move.lastTarget=target,move.connectTarget=target,el.classList.toggle("drop-connect",!!target)}),handle.addEventListener("pointerup",e=>{if(!move||e.pointerId!==move.id)return;const m=move;if(move=null,g.dragging=!1,el.classList.remove("dragging"),el.classList.remove("drop-connect"),m.lastTarget&&m.lastTarget.el.classList.remove("target-connect"),m.connectTarget){pushSnapshot(m.snap),saveAll();const ex=groupConnections.find(c=>c.a===g&&c.b===m.connectTarget||c.a===m.connectTarget&&c.b===g);ex?openEditGroupConnectionModal(ex):openNewGroupConnectionModal(g,m.connectTarget);return}if(m.changed)pushSnapshot(m.snap),saveAll();else if(!window.__burbujasReadOnly){const was=el.classList.contains("selected");e.shiftKey||clearSelectedVisuals(),el.classList.toggle("selected",e.shiftKey?!was:!0),clearKbFocus();const a=document.activeElement;a&&a!==document.body&&a.blur&&a.blur(),updateSelectionToolbar()}}),handle.addEventListener("pointercancel",e=>{!move||e.pointerId!==move.id||(move.lastTarget&&move.lastTarget.el.classList.remove("target-connect"),move=null,g.dragging=!1,el.classList.remove("dragging"),el.classList.remove("drop-connect"))});let resize=null;const MIN_GW=190,MIN_GH=170;return resizeHandle.addEventListener("pointerdown",e=>{if(e.button===0&&!g.collapsed){e.preventDefault(),e.stopPropagation(),resize={id:e.pointerId,sx:e.clientX,sy:e.clientY,sw:g.w,sh:g.h,sx0:g.x,sy0:g.y,snap:snapshotState(),changed:!1},g.resizing=!0,g.vx=0,g.vy=0,el.classList.add("resizing");try{resizeHandle.setPointerCapture(e.pointerId)}catch(_){}}}),resizeHandle.addEventListener("pointermove",e=>{if(!resize||e.pointerId!==resize.id)return;const maxW2=Math.max(MIN_GW,W-g.x-8),maxH2=Math.max(MIN_GH,Math.min(H-16,floorY+18)-g.y);let nw=clamp(resize.sw+(e.clientX-resize.sx),MIN_GW,maxW2),nh=clamp(resize.sh+(e.clientY-resize.sy),MIN_GH,maxH2);Math.abs(nw-g.w)+Math.abs(nh-g.h)>.1&&(resize.changed=!0),g.w=nw,g.h=nh,placeGroup(g),groupMembers(g).forEach(b=>{b.dragging||b.resizing||containBubble(b,g,!1)})}),resizeHandle.addEventListener("pointerup",e=>{if(!resize||e.pointerId!==resize.id)return;const r=resize;resize=null,g.resizing=!1,el.classList.remove("resizing"),groupMembers(g).forEach(b=>containBubble(b,g,!1)),r.changed&&(pushSnapshot(r.snap),saveAll())}),resizeHandle.addEventListener("pointercancel",e=>{!resize||e.pointerId!==resize.id||(resize=null,g.resizing=!1,el.classList.remove("resizing"))}),g}function groupSelectedBubbles(selected){const eligible=selected.filter(b=>!b.dead&&!b.groupId);if(eligible.length<2){clearSelectedVisuals();return}const title=window.prompt("Pon\xE9 un t\xEDtulo para la burbuja madre:","Nuevo grupo");if(title===null){clearSelectedVisuals();return}focusId&&exitFocus(),pushUndo();const g=createMotherGroup(eligible,title);clearSelectedVisuals(),g&&(saveAll(),showAutosaveToast("\u2713 Grupo creado y guardado"))}function delTargets(){let sel=bubbles.filter(b=>!b.dead&&b.el.classList.contains("selected"));const sg=selExtraG(),sp=selExtraP();if(!sel.length&&!sg.length&&!sp.length){const kb=typeof getKbFocus=="function"?getKbFocus():null;kb&&!kb.dead&&(sel=[kb])}return{sel,sg,sp}}function deleteSelected(){const _t=delTargets(),selected=_t.sel,sg=_t.sg,sp=_t.sp;if(!selected.length&&!sg.length&&!sp.length)return;pushUndo(),sg.forEach(g=>removeMotherGroup(g,!0)),sp.forEach(p=>{const i=postits.indexOf(p);i>-1&&postits.splice(i,1),p.el.remove()}),!selected.length&&(saveAll(),clearSelectedVisuals());selected.length&&(playBubbleSound(),selected.forEach(b=>{b.dead=!0,b.el.classList.add("pop"),setTimeout(()=>b.wrap.remove(),460);for(let i2=connections.length-1;i2>=0;i2--)(connections[i2].a===b||connections[i2].b===b)&&removeConnection(connections[i2],!0);const i=bubbles.indexOf(b);i>-1&&bubbles.splice(i,1),b.note&&saveNotes()}),syncGroupsAfterBubbleChange(),saveAll(),clearSelectedVisuals())}function updateSelectionToolbar(){const selected=getSelectedBubbles(),extraN=selExtraG().length+selExtraP().length;if(selected.length+extraN<1){selectionToolbar.classList.remove("visible"),selectionToolbar.innerHTML="";return}selectionToolbar.innerHTML="";const cnt=document.createElement("span");cnt.className="count",cnt.textContent=selected.length+extraN===1?"1 seleccionado":selected.length+extraN+" seleccionados",selectionToolbar.appendChild(cnt);const dupBtn=document.createElement("button");if(dupBtn.type="button",dupBtn.textContent="Duplicar",dupBtn.title="Duplicar (Ctrl+D)",dupBtn.addEventListener("click",e=>{e.stopPropagation(),duplicateSelectedOrFocused()}),selectionToolbar.appendChild(dupBtn),selected.length>=2){const groupBtn=document.createElement("button");groupBtn.type="button",groupBtn.className="primary",groupBtn.textContent="Agrupar en madre",groupBtn.addEventListener("click",e=>{e.stopPropagation(),groupSelectedBubbles(getSelectedBubbles()),selectionToolbar.classList.remove("visible")}),selectionToolbar.appendChild(groupBtn)}const delBtn=document.createElement("button");delBtn.type="button",delBtn.className="danger",delBtn.textContent="Eliminar",delBtn.addEventListener("click",e=>{e.stopPropagation(),deleteSelected()}),selectionToolbar.appendChild(delBtn),selectionToolbar.classList.add("visible")}function marqueeRect(){if(!marquee)return null;const x=Math.min(marquee.sx,marquee.cx),y=Math.min(marquee.sy,marquee.cy);return{left:x,top:y,right:Math.max(marquee.sx,marquee.cx),bottom:Math.max(marquee.sy,marquee.cy)}}function updateMarqueeSelection(){const r=marqueeRect();r&&(selectionRect.style.left=r.left+"px",selectionRect.style.top=r.top+"px",selectionRect.style.width=r.right-r.left+"px",selectionRect.style.height=r.bottom-r.top+"px",bubbles.forEach(b=>{if(b.dead||b.groupId){b.el.classList.remove("selected");return}const br=b.wrap.getBoundingClientRect(),hit=br.right>=r.left&&br.left<=r.right&&br.bottom>=r.top&&br.top<=r.bottom;b.el.classList.toggle("selected",hit)}),groups.forEach(g=>{if(!g.el)return;const gr=g.el.getBoundingClientRect();g.el.classList.toggle("selected",gr.left>=r.left&&gr.right<=r.right&&gr.top>=r.top&&gr.bottom<=r.bottom)}),typeof postits!="undefined"&&postits.forEach(p=>{const pr=p.el.getBoundingClientRect();p.el.classList.toggle("selected",pr.right>=r.left&&pr.left<=r.right&&pr.bottom>=r.top&&pr.top<=r.bottom)}))}scene.addEventListener("pointerdown",e=>{if(!(e.pointerType!=="mouse"||e.button!==0)&&!(e.target.closest&&e.target.closest(".postit,.bubble-wrap,.link-label,.mother-group-title,.mother-handle,.mother-del,.mother-connect,.mother-collapse,.mother-resize,.selection-toolbar,.inline-creator"))&&!connectMode&&!inlineCreator){clearSelectedVisuals(),marquee={id:e.pointerId,sx:e.clientX,sy:e.clientY,cx:e.clientX,cy:e.clientY,moved:!1,grp:e.target.closest&&e.target.closest(".mother-group")},selectionRect.classList.add("active"),selectionRect.style.left=e.clientX+"px",selectionRect.style.top=e.clientY+"px",selectionRect.style.width="0px",selectionRect.style.height="0px";try{scene.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()}}),document.addEventListener("pointermove",e=>{!marquee||e.pointerId!==marquee.id||(marquee.cx=e.clientX,marquee.cy=e.clientY,!marquee.moved&&(marquee.cx-marquee.sx)**2+(marquee.cy-marquee.sy)**2>36&&(marquee.moved=!0),marquee.moved&&updateMarqueeSelection())}),document.addEventListener("pointerup",e=>{if(!marquee||e.pointerId!==marquee.id)return;const didMove=marquee.moved,mgrp=marquee.grp;if(marquee=null,selectionRect.classList.remove("active"),!didMove){if(clearSelectedVisuals(),focusId&&exitFocus(),clearKbFocus(),mgrp&&!window.__burbujasReadOnly&&groups.some(x=>x.el===mgrp)){mgrp.classList.add("selected");const a=document.activeElement;a&&a!==document.body&&a.blur&&a.blur(),updateSelectionToolbar()}return}updateSelectionToolbar()}),document.addEventListener("pointercancel",e=>{!marquee||e.pointerId!==marquee.id||(marquee=null,selectionRect.classList.remove("active"),clearSelectedVisuals())}),scene.addEventListener("dblclick",e=>{if(e.target.closest&&e.target.closest(".postit,.bubble-wrap,.link-label,.mother-group-title,.mother-handle,.mother-del,.mother-connect,.mother-collapse,.mother-resize,.selection-toolbar,.inline-creator")||connectMode||inlineCreator||lockScreen.classList.contains("is-visible")||modal.classList.contains("is-open")||connModal.classList.contains("is-open")||passModal.classList.contains("is-open")||noteModal.classList.contains("is-open")||lightbox.classList.contains("is-open")||exportModal.classList.contains("is-open")||typeof helpModal!="undefined"&&helpModal&&helpModal.classList.contains("is-open"))return;e.preventDefault();const ww=clientToWorld(e.clientX,e.clientY);openInlineCreator(e.clientX,e.clientY,ww.x,ww.y)});function autoResizeInline(ta){ta.style.height="auto",ta.style.height=Math.min(ta.scrollHeight,120)+"px"}function openInlineCreator(cx,cy,wx,wy){closeInlineCreator();const el=document.createElement("div");el.className="inline-creator";const ta=document.createElement("textarea");ta.rows=1,ta.placeholder="Nueva burbuja\u2026  Enter crea \xB7 Esc cancela",el.appendChild(ta);const worldX=wx!=null?wx:cx,worldY=wy!=null?wy:cy;let parentGroupId=null;for(const g of groups)if(worldX>g.x&&worldX<g.x+g.w&&worldY>g.y&&worldY<g.y+g.h){parentGroupId=g.id;break}const x=Math.max(130,Math.min(W-130,cx)),y=Math.max(70,Math.min(floorY-30,cy));el.style.left=x+"px",el.style.top=y+"px",document.body.appendChild(el),inlineCreator={wrap:el,ta,x:worldX,y:worldY,parentGroupId},requestAnimationFrame(()=>{ta.focus({preventScroll:!0}),autoResizeInline(ta)}),ta.addEventListener("input",()=>autoResizeInline(ta)),ta.addEventListener("keydown",e=>{e.key==="Enter"&&!e.shiftKey?(e.preventDefault(),e.stopPropagation(),commitInlineCreator()):e.key==="Escape"&&(e.preventDefault(),e.stopPropagation(),closeInlineCreator())}),setTimeout(()=>{inlineCreator&&document.addEventListener("pointerdown",inlineCreatorOutside,!0)},0)}function inlineCreatorOutside(e){inlineCreator&&(inlineCreator.wrap.contains(e.target)||(inlineCreator.ta.value.trim()?commitInlineCreator():closeInlineCreator()))}function closeInlineCreator(){inlineCreator&&(document.removeEventListener("pointerdown",inlineCreatorOutside,!0),inlineCreator.wrap.remove(),inlineCreator=null)}function commitInlineCreator(){if(!inlineCreator)return;const text=inlineCreator.ta.value.trim(),x=inlineCreator.x,y=inlineCreator.y,parentGroupId=inlineCreator.parentGroupId;if(closeInlineCreator(),!text)return;focusId&&exitFocus(),pushUndo();const nb=addBubble(text,{cx:x,cy:y,groupId:parentGroupId});if(nb){if(parentGroupId){const g=getGroup(parentGroupId);g&&containBubble(nb,g,!1)}playBubbleSound()}saveAll(),hint.classList.add("gone")}const MAP_DB_NAME="burbujas-map",MAP_DB_VER=1,MAX_MAP_VERSIONS=12,VERSION_MIN_INTERVAL_MS=90*1e3;let mapDbP=null,lastVersionAt=0,storageEstimateCache={used:0,quota:0,mapBytes:0,filesBytes:0,versionsBytes:0,at:0};function mapDb(){return mapDbP||(mapDbP=new Promise((res,rej)=>{if(!window.indexedDB){rej(new Error("IndexedDB no disponible"));return}const rq=indexedDB.open(MAP_DB_NAME,MAP_DB_VER);rq.onupgradeneeded=()=>{const db=rq.result;db.objectStoreNames.contains("current")||db.createObjectStore("current"),db.objectStoreNames.contains("versions")||db.createObjectStore("versions",{keyPath:"id",autoIncrement:!0}).createIndex("by_ts","ts",{unique:!1})},rq.onsuccess=()=>res(rq.result),rq.onerror=()=>rej(rq.error||new Error("no se pudo abrir MapDB"))}),mapDbP.catch(()=>{mapDbP=null})),mapDbP}function mapTx(store,mode,fn){return mapDb().then(db=>new Promise((res,rej)=>{const tx=db.transaction(store,mode),st=tx.objectStore(store);let req;try{req=fn(st)}catch(e){rej(e);return}tx.oncomplete=()=>res(req&&"result"in req?req.result:void 0),tx.onerror=()=>rej(tx.error),tx.onabort=()=>rej(tx.error||new Error("abort"))}))}function isQuotaError(e){if(!e)return!1;const n=e.name||"";return n==="QuotaExceededError"||n==="NS_ERROR_DOM_QUOTA_REACHED"||/quota/i.test(String(e.message||""))}function lightSnapshot(packed){const notes={},src=packed.notes||{};for(const id of Object.keys(src)){const n=src[id];n&&(notes[id]={t:n.t||"",l:(n.l||[]).map(x=>({url:x.url,title:x.title||""})),i:[],f:(n.f||[]).map(m=>({id:m.id,name:m.name,type:m.type,size:m.size}))})}return{schemaVersion:packed.schemaVersion,title:packed.title||"",bubbles:packed.bubbles||[],connections:packed.connections||[],groups:packed.groups||[],groupConnections:packed.groupConnections||[],notes,meta:Object.assign({},packed.meta||{},{versionKind:"light"})}}function writeLocalStorageMirror(packed){localStorage.setItem(K_SCHEMA,String(BurbujasSchema.VERSION)),localStorage.setItem(K_META,JSON.stringify(Object.assign({},packed.meta||{},{postits:((packed.meta||{}).postits||[]).map(q=>q&&q.d?Object.assign({},q,{d:void 0}):q)}))),localStorage.setItem(K_B,JSON.stringify(packed.bubbles)),localStorage.setItem(K_C,JSON.stringify(packed.connections)),localStorage.setItem(K_G,JSON.stringify(packed.groups)),localStorage.setItem(K_GC,JSON.stringify(packed.groupConnections)),localStorage.setItem(K_N,JSON.stringify(packed.notes)),packed.title!=null&&localStorage.setItem(K_T,packed.title)}async function mapDbPutCurrent(packed){await mapTx("current","readwrite",st=>st.put(packed,"map"))}async function mapDbGetCurrent(){try{return await mapTx("current","readonly",st=>st.get("map"))}catch(e){return null}}async function mapDbAddVersion(packed,reason){const light=lightSnapshot(packed),entry={ts:Date.now(),reason:reason||"auto",title:(light.title||"").trim(),bubbles:(light.bubbles||[]).length,connections:(light.connections||[]).length,groups:(light.groups||[]).length,data:light};await mapTx("versions","readwrite",st=>st.add(entry)),lastVersionAt=entry.ts;const all=await mapTx("versions","readonly",st=>st.getAll());if(Array.isArray(all)&&all.length>MAX_MAP_VERSIONS){all.sort((a,b)=>(a.ts||0)-(b.ts||0));const drop=all.slice(0,all.length-MAX_MAP_VERSIONS).map(v=>v.id);drop.length&&await mapTx("versions","readwrite",st=>{drop.forEach(id=>st.delete(id))})}}async function mapDbListVersions(){try{const all=await mapTx("versions","readonly",st=>st.getAll());return Array.isArray(all)?all.sort((a,b)=>(b.ts||0)-(a.ts||0)):[]}catch(e){return[]}}async function mapDbGetVersion(id){return mapTx("versions","readonly",st=>st.get(id))}async function mapDbClearVersions(){await mapTx("versions","readwrite",st=>st.clear())}async function estimateFilesBytes(){try{const db=await filesDb(),keys=await new Promise((res,rej)=>{const rq=db.transaction("files","readonly").objectStore("files").getAllKeys();rq.onsuccess=()=>res(rq.result||[]),rq.onerror=()=>rej(rq.error)});let total=0;for(const k of keys)try{const blob=await getFile(k);blob&&typeof blob.size=="number"&&(total+=blob.size)}catch(_){}return total}catch(e){return 0}}function approxJsonBytes(obj){try{return new Blob([JSON.stringify(obj)]).size}catch(e){try{return JSON.stringify(obj).length*2}catch(_){return 0}}}async function refreshStorageEstimate(force){const now=Date.now();if(!force&&storageEstimateCache.at&&now-storageEstimateCache.at<8e3)return storageEstimateCache;let mapBytes=0,versionsBytes=0,filesBytes=0,used=0,quota=0;try{const cur=await mapDbGetCurrent();cur&&(mapBytes=approxJsonBytes(cur))}catch(_){}try{const vers=await mapDbListVersions();versionsBytes=approxJsonBytes(vers)}catch(_){}filesBytes=await estimateFilesBytes();let lsBytes=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||k.indexOf("burbujas")!==0)continue;const v=localStorage.getItem(k)||"";lsBytes+=(k.length+v.length)*2}}catch(_){}const appUsed=mapBytes+versionsBytes+filesBytes+lsBytes;if(navigator.storage&&navigator.storage.estimate)try{const est=await navigator.storage.estimate();used=est.usage||appUsed,quota=est.quota||0}catch(_){used=appUsed}else used=appUsed;return storageEstimateCache={used,quota,mapBytes,filesBytes,versionsBytes,lsBytes,appUsed,at:now},updateStorageUI(),storageEstimateCache}function fmtMB(n){return n<1024?n+" B":n<1048576?(n/1024).toFixed(0)+" KB":(n/1048576).toFixed(1)+" MB"}function updateStorageUI(){const el=$("storageUsage"),btn=$("storageBtn");if(!el)return;const c=storageEstimateCache;if(!c.at){el.textContent="\u2014";return}const pct=c.quota?Math.min(100,Math.round(c.appUsed/c.quota*1e3)/10):null;el.textContent=pct==null||pct<1?"espacio usado: casi nada":"espacio usado: "+Math.round(pct)+"%",el.classList.remove("warn","danger"),btn&&btn.classList.remove("warn","danger");const ratio=c.quota?c.appUsed/c.quota:0;ratio>=.9||saveFailed?(el.classList.add("danger"),btn&&btn.classList.add("danger")):ratio>=.7&&(el.classList.add("warn"),btn&&btn.classList.add("warn")),el.title="Almacenamiento de Burbujas \u2248 "+fmtMB(c.appUsed)+(c.quota?" de ~"+fmtMB(c.quota)+" disponibles":"")+`
 Mapa: `+fmtMB(c.mapBytes)+" \xB7 Versiones: "+fmtMB(c.versionsBytes)+" \xB7 Archivos: "+fmtMB(c.filesBytes)+`
 Clic para gestionar`}function packPersistedState(){const notes={};return bubbles.forEach(b=>{hasNote(b.note)&&(notes[b.id]=b.note)}),BurbujasSchema.packLive({title:currentTitle||"",bubbles:bubbles.map(b=>({id:b.id,t:b.text,h:b.hue,u:b.urgent?1:0,d:b.done?1:0,s:b.scale,cx:b.cx,cy:b.cy,g:b.groupId||null,tags:b.tags||[],o:b.order!=null?b.order:null,i:b.icon||"",st:b.status||"",p:b.parentId||null,oc:b.olCollapsed?1:0,sh:b.shape||""})),connections:connections.map(c=>({id:c.id,f:c.a.id,t:c.b.id,l:c.label||"",h:c.hue,s:c.ctrlSign,ph:c.phase,d:c.dir|0,k:c.type||""})),groups:groups.map(g=>({id:g.id,title:g.title,x:g.x,y:g.y,w:gSaveW(g),h:gSaveH(g),hue:g.hue,collapsed:g.collapsed?1:0,oc:g.olCollapsed?1:0,ew:g.expandedW,eh:g.expandedH,members:bubbles.filter(b=>b.groupId===g.id&&!b.dead).map(b=>b.id)})),groupConnections:groupConnections.map(gc=>({id:gc.id,f:gc.a.id,t:gc.b.id,l:gc.label||"",h:gc.hue,s:gc.ctrlSign,ph:gc.phase,d:gc.dir|0,k:gc.type||""})),notes,meta:{postits:serializePostits(!0),presentation:(window.__burbujasPresentMode&&window.__burbujasPresentMode.pathForMeta&&window.__burbujasPresentMode.pathForMeta())||void 0}})}function saveAll(){const packed=packPersistedState();let lsOk=!1;try{writeLocalStorageMirror(packed),lsOk=!0,saveFailed=!1}catch(e){console.error("saveAll localStorage",e),saveFailed=!0,showAutosaveToast("\u26A0 Almacenamiento lleno o bloqueado. Abr\xED \xABespacio\xBB para exportar un respaldo o liberar historial.",1e4,!0)}mapDbPutCurrent(packed).then(()=>{if(lsOk||(saveFailed=!1),updateSaveStatus(),Date.now()-lastVersionAt>=VERSION_MIN_INTERVAL_MS)return mapDbAddVersion(packed,"auto").catch(e=>console.warn("version",e))}).then(()=>refreshStorageEstimate(!0).catch(()=>{})).catch(e=>{console.error("saveAll IDB",e),isQuotaError(e)?(saveFailed=!0,showAutosaveToast("\u26A0 IndexedDB sin espacio. Export\xE1 un respaldo (.json) desde \xABespacio\xBB.",1e4,!0),updateSaveStatus(),openStorageModal()):lsOk||(saveFailed=!0,updateSaveStatus())}),markDirty(),updateFocusVisuals(),searchState.active&&applySearchVisuals(),typeof refreshOutline=="function"&&refreshOutline()}function readLocalStoragePacked(){try{const raw={schemaVersion:Number(localStorage.getItem(K_SCHEMA)||0)||0,title:localStorage.getItem(K_T)||"",bubbles:JSON.parse(localStorage.getItem(K_B)||"[]"),connections:JSON.parse(localStorage.getItem(K_C)||"[]"),groups:JSON.parse(localStorage.getItem(K_G)||"[]"),groupConnections:JSON.parse(localStorage.getItem(K_GC)||"[]"),notes:JSON.parse(localStorage.getItem(K_N)||"{}"),meta:JSON.parse(localStorage.getItem(K_META)||"null")};return BurbujasSchema.migrate(raw)}catch(e){return console.error("readLocalStoragePacked",e),BurbujasSchema.migrate({schemaVersion:0,bubbles:[],connections:[],groups:[],groupConnections:[],notes:{},title:""})}}var postits=[];const PI_COLORS=["#fde68a","#fbcfe8","#bbf7d0","#bae6fd","#fed7aa","#ddd6fe"];const FT_COLORS=["#eaf0ff","#fde68a","#a6d4ff","#bbf7d0","#fbcfe8","#fdba74"],FT_SIZES=[15,20,28,40];
@@ -7917,6 +7918,1508 @@ body.dance-no-lights #danceLights{opacity:0!important}
   window.__burbujasDanceAPI={start:startDance, stop:stopDance, togglePanel:togglePanel, isActive:function(){return !!D.active;}};
 })();
 </script>
+
+
+
+
+
+<style id="burbujas-toning-mode-css">
+#toningPanel,#toningHud{--tp-bg:#0d1120f5;--tp-fg:#eaf0ff;--tp-mute:#eaf0ffb0;--tp-line:rgba(180,140,255,.38);--tp-soft:#ffffff12;--tp-soft2:#ffffff22;--tp-accent:#b48cff;--tp-guide:linear-gradient(145deg,#1a1840e6,#120e28f0);--tp-main:#f0e8ff;--tp-glow:rgba(180,140,255,.5);--tp-ok:#7dff9a;--tp-how:#dcc8f5}
+html[data-theme=cream] #toningPanel,html[data-theme=antique] #toningPanel,html[data-theme=cream] #toningHud,html[data-theme=antique] #toningHud{--tp-bg:#f6efe0f7;--tp-fg:#2b2116;--tp-mute:#2b2116b3;--tp-line:#70553855;--tp-soft:#0000000d;--tp-soft2:#0000001c;--tp-accent:#7a4fd0;--tp-guide:#efe4d0;--tp-main:#2b2116;--tp-glow:transparent;--tp-ok:#1d9a45;--tp-how:#4a3a28}
+html[data-theme=matrix] #toningPanel,html[data-theme=matrix] #toningHud{--tp-bg:rgba(0,17,6,.97);--tp-fg:#c7ffd3;--tp-mute:#c7ffd3b0;--tp-line:rgba(38,255,93,.45);--tp-soft:#26ff5d14;--tp-soft2:#26ff5d26;--tp-accent:#26ff5d;--tp-guide:#02200b;--tp-main:#c7ffd3;--tp-glow:rgba(38,255,93,.4);--tp-how:#9bf5b2}
+#toningBtn.active{background:rgba(180,120,255,.3)!important;border-color:rgba(200,150,255,.75)!important;color:#f3e8ff!important}
+.tn-sr{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ---------- panel ---------- */
+#toningPanel{position:fixed;top:12px;right:12px;z-index:9999;width:min(392px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;background:var(--tp-bg);color:var(--tp-fg);border:1px solid var(--tp-line);border-radius:16px;padding:12px 14px 12px;box-shadow:0 18px 50px rgba(0,0,0,.5);font-family:inherit;scrollbar-width:thin;color-scheme:dark}
+html[data-theme=cream] #toningPanel,html[data-theme=antique] #toningPanel{color-scheme:light}
+#toningPanel[hidden]{display:none}
+#toningPanel::-webkit-scrollbar{width:6px}#toningPanel::-webkit-scrollbar-thumb{background:#ffffff30;border-radius:3px}
+#toningPanel .tp-head{display:flex;align-items:center;gap:8px;position:sticky;top:-12px;z-index:3;background:var(--tp-bg);padding:6px 0 6px;margin:0 0 2px}
+#toningPanel h3{margin:0;flex:1;font-size:16px;font-weight:600}
+#toningPanel .tp-x{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--tp-line);background:var(--tp-soft);color:inherit;cursor:pointer;font:inherit;font-size:14px;line-height:1}
+#toningPanel p{margin:0 0 8px;font-size:12px;line-height:1.5;color:var(--tp-mute)}
+#toningPanel button:focus-visible,#toningPanel select:focus-visible,#toningPanel input:focus-visible,#toningPanel summary:focus-visible{outline:2px solid var(--tp-accent);outline-offset:2px}
+#toningPanel .toning-guide{margin:8px 0;padding:12px 14px;border-radius:14px;background:var(--tp-guide);border:1px solid var(--tp-line)}
+#toningPanel .tg-label{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--tp-mute);margin-bottom:4px}
+#toningPanel .tg-main{font-size:26px;font-weight:600;letter-spacing:1px;line-height:1.2;color:var(--tp-main);text-shadow:0 0 18px var(--tp-glow)}
+#toningPanel .tg-zone{margin-top:2px;font-size:12px;color:var(--tp-mute)}
+#toningPanel .tg-sub{margin-top:4px;font-size:13px}
+#toningPanel .tg-how{margin-top:8px;font-size:13px;line-height:1.45;color:var(--tp-how)}
+#toningPanel .tg-breath{margin-top:10px;font-size:12px}
+#toningPanel .tg-breath-bar{height:6px;border-radius:3px;background:var(--tp-soft2);overflow:hidden;margin-bottom:4px}
+#toningPanel .tg-breath-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7f9dff,#d4a6ff);border-radius:3px;transition:width .12s linear}
+#toningPanel .tg-breath.inhale .tg-breath-bar i{background:linear-gradient(90deg,#7fe0ff,#9dc4ff)}
+#toningPanel .toning-chakras{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:8px 0}
+#toningPanel .toning-chakras button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;height:48px;padding:3px 0;border-radius:10px;background:var(--tp-soft);border:1px solid var(--tp-line);color:inherit;font:inherit;font-size:11px;font-weight:600;cursor:pointer;user-select:none;transition:background .15s,border-color .15s,box-shadow .15s,opacity .15s}
+#toningPanel .toning-chakras button i{width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
+#toningPanel .toning-chakras button small{font-size:10px;font-weight:500;opacity:.75;min-height:11px;line-height:11px}
+#toningPanel .toning-chakras button.empty{opacity:.5}
+#toningPanel .toning-chakras button.on{border-color:var(--c);box-shadow:0 0 0 1px var(--c),0 0 12px color-mix(in srgb,var(--c) 55%,transparent)}
+#toningPanel .toning-chakras button.lead{background:var(--tp-soft2)}
+#toningPanel .toning-chakras button.solo{background:var(--tp-soft2);border-color:var(--tp-fg);box-shadow:0 0 0 2px var(--tp-fg)}
+#toningPanel .toning-onboard{margin:8px 0 10px;padding:10px 12px;border-radius:12px;border:1px solid var(--tp-line);background:linear-gradient(145deg,color-mix(in srgb,var(--tp-accent) 12%,var(--tp-soft)),var(--tp-soft));font-size:12.5px;line-height:1.45}
+#toningPanel .toning-onboard[hidden]{display:none}
+#toningPanel .to-steps{margin:0 0 8px}
+#toningPanel .to-step{display:flex;gap:10px;align-items:flex-start}
+#toningPanel .to-step[hidden]{display:none}
+#toningPanel .to-n{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--tp-accent);color:#0a0f1e}
+#toningPanel .to-actions{display:flex;gap:8px;align-items:center}
+#toningPanel .to-actions button{font:inherit;font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid var(--tp-line);background:var(--tp-soft2);color:inherit;cursor:pointer}
+#toningPanel .to-actions button:hover{background:var(--tp-soft)}
+#toningPanel .to-actions #toningOnboardNext{background:linear-gradient(140deg,#a6d4ff,#7f9dff 48%,#b58cff);color:#08101f;border-color:transparent;font-weight:600}
+#toningPanel .to-actions .to-skip{opacity:.75;background:transparent}
+#toningPanel .toning-mic{margin:8px 0;padding:8px 10px;border-radius:12px;border:1px solid var(--tp-line);background:var(--tp-soft);font-size:12px}
+#toningPanel .tm-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}
+#toningPanel .tm-meter{position:relative;height:14px;border-radius:7px;background:linear-gradient(90deg,#ff7a7a33 0,#ff7a7a33 38%,#7dff9a66 40%,#7dff9a66 60%,#ff7a7a33 62%,#ff7a7a33 100%)}
+#toningPanel .tm-center{position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:var(--tp-fg);opacity:.6;transform:translateX(-50%)}
+#toningPanel .tm-dot{position:absolute;top:1px;left:50%;width:12px;height:12px;border-radius:50%;background:var(--tp-fg);transform:translateX(-50%);opacity:0;transition:left .12s ease-out,opacity .2s,background .2s,box-shadow .25s,width .2s,height .2s,top .2s}
+#toningPanel .tm-dot.on{opacity:1}
+#toningPanel .tm-dot.ok{background:var(--tp-ok);box-shadow:0 0 12px var(--tp-ok),0 0 22px color-mix(in srgb,var(--tp-ok) 55%,transparent);width:14px;height:14px;top:0}
+#toningPanel .tm-dot.almost{background:#ffd27a;box-shadow:0 0 8px #ffd27a88}
+#toningPanel .tm-legend{display:flex;justify-content:space-between;margin-top:4px;color:var(--tp-mute);font-size:11px}
+#toningPanel .tm-legend #toningMicMatch{color:var(--tp-fg);font-weight:600;transition:color .2s}
+body.tn-ok #toningPanel .tm-legend #toningMicMatch{color:var(--tp-ok)}
+#toningPanel .tm-score,#toningPanel .tm-tip{margin-top:4px;font-size:11px;color:var(--tp-mute)}
+#toningPanel .tm-tip[hidden]{display:none}
+#toningPanel .tp-row{display:flex;align-items:center;gap:8px;font-size:12px;margin:8px 0}
+#toningPanel .tp-row>label:first-child,#toningPanel .tp-row>span:first-child{flex:none;width:86px;color:var(--tp-mute)}
+#toningPanel .tp-row.chk{gap:6px}
+#toningPanel .tp-row.chk>label{width:auto;color:inherit}
+#toningPanel .tp-row.chk label{display:flex;align-items:center;gap:6px;cursor:pointer}
+#toningPanel .tp-row input[type=range]{flex:1;min-width:0;accent-color:var(--tp-accent)}
+#toningPanel .tp-row input[type=checkbox]{accent-color:var(--tp-accent)}
+#toningPanel .tp-row output{flex:none;min-width:42px;text-align:right;font-variant-numeric:tabular-nums}
+#toningPanel select{flex:1;min-width:0;background:var(--tp-soft);color:inherit;border:1px solid var(--tp-line);border-radius:8px;padding:6px 8px;font:inherit;font-size:12px}
+#toningPanel select option{background:#12162a;color:#eaf0ff}
+html[data-theme=cream] #toningPanel select option,html[data-theme=antique] #toningPanel select option{background:#f6efe0;color:#2b2116}
+html[data-theme=matrix] #toningPanel select option{background:#001106;color:#c7ffd3}
+#toningPanel details{margin:8px 0;border:1px solid var(--tp-line);border-radius:12px;padding:2px 10px;background:var(--tp-soft)}
+#toningPanel details>summary{cursor:pointer;font-size:12px;font-weight:600;padding:8px 0;list-style-position:inside}
+#toningPanel details[open]>summary{border-bottom:1px solid var(--tp-line);margin-bottom:2px}
+#toningPanel details p{margin:6px 0}
+#toningPanel kbd{display:inline-block;background:var(--tp-soft2);border:1px solid var(--tp-line);border-radius:5px;padding:1px 6px;font:11.5px var(--font,system-ui);margin:0 1px}
+#toningPanel .tp-statusrow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:8px 0 2px}
+#toningPanel .toning-status{flex:1;min-width:0;font-size:12px;color:var(--tp-mute);min-height:18px}
+#toningPanel .tp-time{flex:none;font-variant-numeric:tabular-nums;font-size:12px;color:var(--tp-mute);text-align:right;min-height:18px}
+#toningPanel .toning-actions{display:flex;gap:8px;margin-top:8px}
+#toningPanel .toning-actions button{flex:1;padding:10px 10px;border-radius:999px;border:1px solid var(--tp-line);background:var(--tp-soft);color:inherit;cursor:pointer;font:inherit;font-size:13px;min-height:40px}
+#toningPanel .toning-actions button.toning-play{background:linear-gradient(140deg,#d4a6ff,#9d7fff 48%,#7f9dff);color:#08101f;border-color:transparent;font-weight:600}
+#toningPanel .toning-actions button.toning-stop{background:#ff5a5a22;border-color:#ff8a8a66}
+#toningPanel .toning-actions button:disabled{opacity:.45;cursor:default}
+
+/* ---------- burbujas ---------- */
+body.toning-mode .bubble.toning-active:not(.kb-focus){outline:2px solid hsla(var(--hue),85%,72%,.35);outline-offset:3px}
+body.toning-mode .bubble.toning-active.toning-lead:not(.kb-focus){outline:2px solid hsla(var(--hue),92%,82%,.95);outline-offset:4px}
+body.toning-ph-inhale .bubble.toning-lead{outline-offset:12px!important;transition:outline-offset var(--tn-in,4s) ease-in-out,box-shadow .15s,border-color .35s,background .35s,color .35s,opacity .3s}
+body.toning-ph-tone .bubble.toning-lead{outline-offset:4px!important;transition:outline-offset var(--tn-tone,8s) ease-in-out,box-shadow .15s,border-color .35s,background .35s,color .35s,opacity .3s}
+
+/* ---------- HUD ---------- */
+#toningHud{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);z-index:35;pointer-events:none;max-width:min(520px,92vw);text-align:center;padding:10px 18px 12px;border-radius:18px;background:var(--tp-bg);border:1px solid var(--tp-line);box-shadow:0 12px 40px #0009;backdrop-filter:blur(10px);color:var(--tp-fg);font-family:var(--font,system-ui);opacity:0;transition:opacity .3s}
+#toningHud.visible{opacity:1}
+#toningHud .th-row{display:flex;align-items:center;justify-content:center;gap:12px}
+#toningHud .th-ring{flex:none;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fffa,var(--tn-c,#b48cff) 55%,transparent 74%);box-shadow:0 0 18px var(--tn-c,#b48cff);transform:scale(.8)}
+body.toning-ph-inhale #toningHud .th-ring{transform:scale(1.4);transition:transform var(--tn-in,4s) ease-in-out}
+body.toning-ph-tone #toningHud .th-ring{transform:scale(.8);transition:transform var(--tn-tone,8s) ease-in-out}
+#toningHud .th-txt{text-align:left}
+#toningHud .th-vowel{font-size:26px;font-weight:600;letter-spacing:1px;line-height:1.1;color:var(--tp-main);text-shadow:0 0 20px var(--tp-glow)}
+#toningHud .th-name{font-size:12px;color:var(--tp-mute)}
+#toningHud .th-hint{margin-top:6px;font-size:13px;line-height:1.4;color:var(--tp-how)}
+#toningHud .th-breath{margin-top:6px;font-size:12px;letter-spacing:.5px;text-transform:uppercase;opacity:.85}
+
+@media(max-width:720px){
+  #toningPanel{top:auto;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));width:auto;max-height:80dvh;border-radius:18px}
+  body.is-mobile #toningPanel{bottom:calc(72px + env(safe-area-inset-bottom));max-height:calc(100dvh - 72px - env(safe-area-inset-bottom) - 16px)}
+  #toningHud{padding:8px 14px 10px}
+  #toningHud .th-hint{display:none}
+}
+
+/* ---------- mejoras visuales (lead, soft, progreso) ---------- */
+body.toning-mode .bubble.toning-soft:not(.toning-active):not(.kb-focus):not(.search-current){
+  opacity:.22; filter:saturate(.55) brightness(.92);
+  transition:opacity .55s ease, filter .55s ease;
+}
+body.toning-mode.toning-focus-lead .bubble.toning-soft:not(.toning-active){opacity:.14}
+@keyframes toningLeadPulse{
+  0%,100%{box-shadow:0 0 0 3px hsla(var(--hue),90%,75%,.35),0 0 18px hsla(var(--hue),85%,60%,.25)}
+  50%{box-shadow:0 0 0 6px hsla(var(--hue),95%,80%,.55),0 0 32px hsla(var(--hue),90%,65%,.45)}
+}
+body.toning-ph-tone .bubble.toning-lead:not(.kb-focus){
+  animation:toningLeadPulse var(--tn-tone,8s) ease-in-out infinite;
+}
+body.toning-mode .bubble.toning-lead{
+  z-index:18!important;
+}
+#toningPanel .tg-progress{
+  margin-top:10px;height:4px;border-radius:3px;background:var(--tp-soft2);overflow:hidden;
+}
+#toningPanel .tg-progress>i{
+  display:block;height:100%;width:0%;border-radius:3px;
+  background:linear-gradient(90deg,#7f9dff,#d4a6ff 60%,#b48cff);
+  transition:width .45s ease;
+}
+#toningPanel .tg-progress[hidden]{display:none}
+#toningPanel .toning-chakras button.lead:after{
+  content:"";position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--c);box-shadow:0 0 6px var(--c);
+}
+#toningHud .th-progress{
+  margin-top:8px;height:3px;border-radius:2px;background:var(--tp-soft2);overflow:hidden;
+}
+#toningHud .th-progress>i{
+  display:block;height:100%;width:0%;background:linear-gradient(90deg,#7f9dff,#d4a6ff);
+  transition:width .4s ease;
+}
+@media(prefers-reduced-motion:reduce){
+  body.toning-ph-tone .bubble.toning-lead{animation:none!important}
+}
+@media(prefers-reduced-motion:reduce){
+  body.toning-ph-inhale .bubble.toning-lead,body.toning-ph-tone .bubble.toning-lead,body.toning-ph-inhale #toningHud .th-ring,body.toning-ph-tone #toningHud .th-ring{transition:none!important}
+}
+</style>
+
+<style id="toning-plus-css">
+@property --tn-c{syntax:"<color>";inherits:true;initial-value:#b48cff}
+body{transition:--tn-c 1.6s ease}
+#toningAura{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;mix-blend-mode:screen;transform-origin:50% 55%;transition:opacity 1.6s ease;background:radial-gradient(ellipse 70% 60% at 50% 55%,color-mix(in srgb,var(--tn-c,#b48cff) 32%,transparent),transparent 70%)}
+body.toning-mode #toningAura{opacity:.75}
+body.toning-noaura #toningAura{display:none}
+body.toning-ph-inhale #toningAura{transform:scale(1.55);opacity:.95;transition:transform var(--tn-in,4s) ease-in-out,opacity 1.2s ease}
+body.toning-ph-tone #toningAura{transform:scale(.92);transition:transform var(--tn-tone,8s) ease-in-out,opacity 1.6s ease}
+body.toning-ph-inhale #toningHud{transform:translateX(-50%) scale(1.04);transition:transform var(--tn-in,4s) ease-in-out,opacity .3s}
+body.toning-ph-tone #toningHud{transform:translateX(-50%) scale(1);transition:transform var(--tn-tone,8s) ease-in-out,opacity .3s}
+body.toning-ph-inhale #toningHud .th-breath{color:var(--tp-main);letter-spacing:.8px;opacity:1}
+body.toning-ph-inhale #toningPanel .tg-breath-bar>i{background:linear-gradient(90deg,#7f9dff,#b48cff)}
+html[data-theme=cream] #toningAura,html[data-theme=antique] #toningAura{mix-blend-mode:multiply}
+html[data-theme=cream] body.toning-mode #toningAura,html[data-theme=antique] body.toning-mode #toningAura{opacity:.4}
+#toningHud .th-ring{width:58px;height:58px;background:none!important;box-shadow:none!important;filter:drop-shadow(0 0 10px var(--tn-c,#b48cff))}
+#toningHud .th-ring svg,#toningPanel .tg-lotus svg{width:100%;height:100%;display:block;animation:tnSpin 60s linear infinite}
+body.toning-ph-inhale #toningHud .th-ring{transform:scale(1.45)}
+@keyframes tnSpin{to{transform:rotate(360deg)}}
+#toningPanel .toning-guide{position:relative;overflow:hidden}
+#toningPanel .tg-lotus{position:absolute;top:8px;right:10px;width:62px;height:62px;opacity:.9;filter:drop-shadow(0 0 8px var(--tn-c,#b48cff))}
+#toningPanel .tg-aff{margin-top:8px;font-size:12px;font-style:italic;color:var(--tp-mute)}
+#toningPanel .tp-stats{margin:8px 0 0;font-size:12px;color:var(--tp-mute);text-align:center}
+#toningPanel .toning-actions button{padding-left:4px;padding-right:4px}
+@media(prefers-reduced-motion:reduce){#toningAura,#toningHud .th-ring svg,#toningPanel .tg-lotus svg{animation:none!important;transition:none!important;transform:none!important}}
+</style>
+<div id="toningAura" aria-hidden="true"></div>
+<style id="toning-v3-css">
+@property --tn-y{syntax:"<percentage>";inherits:true;initial-value:55%}
+body{transition:--tn-c 1.6s ease,--tn-y 1.6s ease}
+#toningAura{background:radial-gradient(ellipse 70% 60% at 50% var(--tn-y,55%),color-mix(in srgb,var(--tn-c,#b48cff) 32%,transparent),transparent 70%)}
+#toningPanel .tg-progress>i,#toningHud .th-progress>i{background:linear-gradient(90deg,color-mix(in srgb,var(--tn-c,#b48cff) 55%,#fff),var(--tn-c,#b48cff))}
+#toningPanel .toning-chakras button.done:before{content:"✓";position:absolute;top:1px;right:4px;font-size:9px;opacity:.85}
+body.tn-ok #toningHud .th-ring{filter:drop-shadow(0 0 28px var(--tn-c,#b48cff)) brightness(1.3)}
+body.tn-ok #toningAura{opacity:1}
+body.tn-ok #toningHud .th-vowel{text-shadow:0 0 18px var(--tn-c,#b48cff),0 0 4px var(--tn-c,#b48cff)}
+#toningBody{position:fixed;left:14px;top:50%;transform:translateY(-50%);height:min(50vh,400px);width:22px;z-index:34;pointer-events:none;display:none;flex-direction:column-reverse;justify-content:space-between;align-items:center}
+body.toning-mode #toningBody{display:flex}
+#toningBody:before{content:"";position:absolute;top:6px;bottom:6px;left:50%;width:2px;margin-left:-1px;border-radius:2px;background:linear-gradient(to top,hsl(0 85% 60%/.5),hsl(58 85% 60%/.5),hsl(130 85% 60%/.5),hsl(200 85% 60%/.5),hsl(300 85% 60%/.5));opacity:.55}
+#toningBody i{position:relative;width:10px;height:10px;border-radius:50%;background:var(--c);opacity:.28;transition:opacity .6s,transform .6s,box-shadow .6s}
+#toningBody i.vis{opacity:.6}
+#toningBody i.on{opacity:.9;box-shadow:0 0 8px var(--c)}
+#toningBody i.lead{opacity:1;transform:scale(1.9);box-shadow:0 0 16px var(--c),0 0 32px var(--c)}
+body.toning-ph-inhale #toningBody i.lead{transform:scale(2.4);transition:transform var(--tn-in,4s) ease-in-out,opacity .6s,box-shadow .6s}
+.tn-ripple{position:fixed;z-index:17;pointer-events:none;border-radius:50%;border:2px solid var(--tn-c,#b48cff);box-shadow:0 0 18px var(--tn-c,#b48cff);transform:translate(-50%,-50%) scale(1);opacity:.9;animation:tnRip 2.4s ease-out forwards}
+@keyframes tnRip{to{transform:translate(-50%,-50%) scale(4.2);opacity:0}}
+body.toning-mode.toning-immersive #toolbar,body.toning-mode.toning-immersive #composer{opacity:.06;transition:opacity .6s}
+body.toning-mode.toning-immersive #toolbar:hover,body.toning-mode.toning-immersive #composer:hover,body.toning-mode.toning-immersive #toolbar:focus-within,body.toning-mode.toning-immersive #composer:focus-within{opacity:1}
+#toningPanel .tp-reset{width:100%;margin:4px 0 6px;padding:7px;border-radius:10px;border:1px solid var(--tp-line);background:var(--tp-soft);color:inherit;font:inherit;font-size:12px;cursor:pointer}
+@media(max-width:720px){#toningBody{left:6px;height:38vh}}
+@media(prefers-reduced-motion:reduce){.tn-ripple{display:none}#toningBody i{transition:none!important}}
+</style>
+<div id="toningBody" aria-hidden="true"></div>
+<div id="toningHud" aria-hidden="true">
+  <div class="th-row">
+    <div class="th-ring" id="toningHudRing"></div>
+    <div class="th-txt"><div class="th-vowel" id="toningHudVowel">Chakras</div><div class="th-name" id="toningHudName"></div></div>
+  </div>
+  <div class="th-hint" id="toningHudHint">Activá el modo para que el mapa suene.</div>
+  <div class="th-progress" id="toningHudProgress" hidden><i id="toningHudProgressFill"></i></div>
+</div>
+<div class="tn-sr" id="toningSR" role="status" aria-live="polite"></div>
+
+<div id="toningPanel" role="dialog" aria-labelledby="toningTitle" hidden>
+  <div class="tp-head">
+    <h3 id="toningTitle">🧘 Modo Chakras · Vocal toning</h3>
+    <button type="button" class="tp-x" id="toningCloseX" aria-label="Cerrar panel" title="Cerrar (Esc)">✕</button>
+  </div>
+  <p>Cada burbuja suena según su color. Respirá con la guía y cantá el sonido que te indica; con el micrófono (y auriculares) ves si estás afinando con el tono.</p>
+
+  <div class="toning-onboard" id="toningOnboard" hidden>
+    <div class="to-steps">
+      <div class="to-step" data-step="0"><span class="to-n">1</span><span>Cada <b>color</b> del mapa es un chakra con su tono.</span></div>
+      <div class="to-step" data-step="1" hidden><span class="to-n">2</span><span>Elegí un <b>preset</b> o tocá <b>Activar chakras</b> y cantá.</span></div>
+      <div class="to-step" data-step="2" hidden><span class="to-n">3</span><span>Opcional: activá el <b>micrófono</b> para ver si afinás.</span></div>
+    </div>
+    <div class="to-actions">
+      <button type="button" id="toningOnboardNext">Siguiente</button>
+      <button type="button" id="toningOnboardSkip" class="to-skip">Omitir</button>
+    </div>
+  </div>
+
+  <div class="toning-guide">
+    <div class="tg-lotus" id="toningGuideLotus" aria-hidden="true"></div>
+    <div class="tg-label">Guía · qué cantar</div>
+    <div class="tg-main" id="toningGuideVowel">—</div>
+    <div class="tg-zone" id="toningGuideZone"></div>
+    <div class="tg-sub" id="toningGuideSub"></div>
+    <div class="tg-how" id="toningGuideHow">Activá el modo. Cada color del mapa es un chakra con su tono y su sonido.</div>
+    <div class="tg-aff" id="toningGuideAff"></div>
+    <div class="tg-breath" id="toningBreath"><div class="tg-breath-bar"><i id="toningBreathFill"></i></div><span id="toningBreathTxt">Respiración guiada</span></div>
+    <div class="tg-progress" id="toningProgress" hidden><i id="toningProgressFill"></i></div>
+  </div>
+
+  <div class="toning-chakras" id="toningVowelChips" role="group" aria-label="Chakras. Tocá uno para escucharlo solo; tocalo otra vez para volver al mapa."></div>
+
+  <div class="toning-mic" id="toningMic">
+    <div class="tm-head"><span>🎤 Tu voz</span><span id="toningMicNote">micrófono apagado</span></div>
+    <div class="tm-meter"><i class="tm-center"></i><i class="tm-dot" id="toningMicDot"></i></div>
+    <div class="tm-legend"><span>más grave</span><span id="toningMicMatch">—</span><span>más agudo</span></div>
+    <div class="tm-score" id="toningMicScore"></div>
+    <div class="tm-tip" id="toningMicTip" hidden>🎧 Usá auriculares: si no, el micrófono escucha el tono de la guía en vez de tu voz. Mientras está activo, la guía baja de volumen.</div>
+  </div>
+
+  <div class="tp-row chk"><label><input type="checkbox" id="toningMicOn"> Escuchar mi voz (micrófono)</label></div>
+  <div class="tp-row"><label for="toningPreset">Preset</label>
+    <select id="toningPreset"><option value="">Elegir una práctica…</option><option value="express">⚡ Express (1 pasada)</option><option value="calm">🌿 Calma con cuenco</option><option value="sleep">🌙 Para dormir (desciende)</option><option value="energy">☀️ Energía (10 min)</option><option value="ground">🌱 Enraizar (raíz → plexo)</option><option value="lift">✨ Elevar (corazón → corona)</option></select></div>
+  <div class="tp-row"><label for="toningSeq">Modo</label>
+    <select id="toningSeq">
+      <option value="map">Todo el mapa a la vez</option>
+      <option value="journey">Recorrido raíz → corona</option>
+      <option value="single">Un chakra por vez (los del mapa)</option>
+    </select></div>
+  <div class="tp-row"><label for="toningBreathSel">Respiración</label>
+    <select id="toningBreathSel">
+      <option value="4-8">Inhalar 4 · cantar 8</option>
+      <option value="4-12">Inhalar 4 · cantar 12</option>
+      <option value="6-10">Inhalar 6 · cantar 10</option>
+      <option value="5-5">Inhalar 5 · cantar 5 (suave)</option>
+      <option value="off">Sin guía de respiración</option>
+    </select></div>
+  <div class="tp-row"><label for="toningTimbre">Sonido</label>
+    <select id="toningTimbre">
+      <option value="puro">Suave (sinusoidal)</option>
+      <option value="coro">Coro «aaah»</option>
+      <option value="cuenco">Cuenco tibetano</option><option value="cristal">Cuenco de cristal</option>
+    </select></div>
+  <div class="tp-row"><label for="toningVol">Volumen</label><input type="range" id="toningVol" min="0.05" max="0.7" step="0.01" value="0.34"><output id="toningVolVal" for="toningVol">34%</output></div>
+
+  <details>
+    <summary>Más opciones</summary>
+    <div class="tp-row"><label for="toningTuning">Afinación</label>
+      <select id="toningTuning">
+        <option value="solfeggio">Solfeggio (396–963 Hz)</option>
+        <option value="scale">Notas Do–Si (entonación justa)</option>
+      </select></div>
+    <div class="tp-row"><label for="toningTranspose">Registro</label><input type="range" id="toningTranspose" min="-12" max="12" step="1" value="0" aria-describedby="toningTransposeHelp"><output id="toningTransposeVal" for="toningTranspose">0 st</output></div>
+    <p id="toningTransposeHelp">Subí o bajá todos los tonos (en semitonos) hasta que cantar sea cómodo para tu voz. −12 es una octava más grave.</p>
+    <div class="tp-row"><label for="toningVerb">Espacio</label><input type="range" id="toningVerb" min="0" max="0.8" step="0.01" value="0.35"><output id="toningVerbVal" for="toningVerb">35%</output></div>
+    <div class="tp-row"><label for="toningCycles">Ciclos</label>
+      <select id="toningCycles">
+        <option value="1">1 respiración por chakra</option><option value="2">2 respiraciones por chakra</option><option value="3">3 respiraciones por chakra</option><option value="4">4 respiraciones por chakra</option><option value="6">6 respiraciones por chakra</option>
+      </select></div>
+    <div class="tp-row"><label for="toningDir">Dirección</label>
+      <select id="toningDir">
+        <option value="up">Ascendente (raíz → corona)</option><option value="down">Descendente (corona → raíz)</option><option value="updown">Ida y vuelta</option>
+      </select></div>
+    <div class="tp-row"><label for="toningRange">Recorrido</label>
+      <select id="toningRange"><option value="all">Los 7 chakras</option><option value="low">Inferiores (raíz → plexo)</option><option value="high">Superiores (corazón → corona)</option></select></div>
+    <div class="tp-row"><label for="toningDuration">Duración</label>
+      <select id="toningDuration">
+        <option value="0">Sin límite</option><option value="5">5 minutos</option><option value="10">10 minutos</option><option value="15">15 minutos</option><option value="20">20 minutos</option><option value="30">30 minutos</option>
+      </select></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningLoop"> Repetir el recorrido en bucle</label></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningBreathSnd"> Sonido suave de inhalación</label></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningBell"> Campanita al empezar a cantar</label></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningCombined"> Armonía rica (quinta + tercera en conexiones)</label></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningSelectedOnly"> Solo seleccionadas, enfocadas o encontradas</label></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningDrone"> Bordón de fondo (raíz continua)</label></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningSpeak"> Guía por voz (usá auriculares)</label></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningHaptic"> Vibración suave al cambiar de fase</label></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningAuraChk"> Aura de color que respira</label></div>
+    <div class="tp-row chk"><label><input type="checkbox" id="toningImmersive"> Inmersivo (atenúa barras mientras suena)</label></div>
+    <button type="button" class="tp-reset" id="toningReset">↺ Restablecer ajustes</button>
+  </details>
+  <details>
+    <summary>¿Cómo se asignan los chakras?</summary>
+    <p>Según el color de cada burbuja: rojo → raíz, naranja → sacro, amarillo → plexo solar, verde → corazón, azul → garganta, índigo → tercer ojo, violeta o magenta → corona. En «Todo el mapa», si seleccionás o enfocás burbujas solo suenan esos chakras (como el modo baile sigue el foco); sin selección suena el mapa completo. Las hechas se oyen más bajito, las urgentes un poco más fuerte. Cada conexión entre colores distintos suma una quinta consonante.</p>
+    <p>Es una práctica contemplativa: cantá a un volumen cómodo y, si sentís mareo, pausá y respirá normal. La correspondencia entre frecuencias Solfeggio y chakras es una convención popular, no una medida científica.</p>
+    <p>Atajos: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> abre el panel · <kbd>Esc</kbd> cierra el panel y apaga el modo · <kbd>Espacio</kbd> pausa o continúa si el modo está activo · <kbd>[</kbd> <kbd>]</kbd> chakra anterior / siguiente · en recorrido o «un chakra», el mapa atenúa las burbujas que no suenan para que sigas la guía con la mirada.</p>
+  </details>
+
+  <div class="tp-stats" id="toningStats"></div>
+  <div class="tp-statusrow"><div class="toning-status" id="toningStatus" aria-hidden="true">Modo apagado.</div><div class="tp-time" id="toningTime"></div></div>
+  <div class="toning-actions">
+    <button type="button" class="toning-play" id="toningPlayBtn">▶ Activar chakras</button>
+    <button type="button" class="toning-stop" id="toningStopBtn">⏹ Detener</button>
+  </div>
+  <div class="toning-actions" style="margin-top:6px">
+    <button type="button" id="toningPrev" title="Chakra anterior ([)" aria-label="Chakra anterior">⏮</button><button type="button" id="toningNext" title="Chakra siguiente (])" aria-label="Chakra siguiente">⏭</button><button type="button" id="toningRef" title="Escuchar el tono guía">🔔 Tono</button>
+    <button type="button" id="toningCloseBtn">Cerrar</button>
+  </div>
+</div>
+
+<script id="burbujas-toning-mode">
+(function(){
+  "use strict";
+  if (window.__burbujasToning) return;
+  var D = document;
+  function $(id){ return D.getElementById(id); }
+  function clamp(x,a,b){ return Math.max(a,Math.min(b,x)); }
+  var LS_KEY = "burbujas.toning.v1";
+
+  /* ================= datos ================= */
+  var CHAKRAS = [
+    { id:"root",   name:"Raíz",        bija:"LAM", hz:396, ratio:1,    hueCenter:0,   zone:"Base de la columna · seguridad y cuerpo",  how:"Cantá «LAAAM» grave, con la boca abierta y relajada. Sentí la vibración en la base de la columna y los pies bien apoyados." },
+    { id:"sacral", name:"Sacro",       bija:"VAM", hz:417, ratio:9/8,  hueCenter:30,  zone:"Bajo vientre · fluir y creatividad",       how:"Cantá «VAAAM» dejando que los labios vibren apenas en la «V». Llevá la atención al bajo vientre." },
+    { id:"solar",  name:"Plexo solar", bija:"RAM", hz:528, ratio:5/4,  hueCenter:58,  zone:"Boca del estómago · voluntad y fuego suave", how:"Cantá «RAAAM» con la «R» suave, firme y luminosa. Sentí calor en el centro del torso." },
+    { id:"heart",  name:"Corazón",     bija:"YAM", hz:639, ratio:4/3,  hueCenter:130, zone:"Centro del pecho · compasión y calma",      how:"Cantá «YAAAM» abierto y cálido, con el pecho amplio. Dejá que el sonido se expanda hacia los costados." },
+    { id:"throat", name:"Garganta",    bija:"HAM", hz:741, ratio:3/2,  hueCenter:200, zone:"Garganta · expresión y verdad",             how:"Cantá «HAAAM» con una «H» suave, sin forzar la garganta. Mandíbula floja, hombros abajo." },
+    { id:"third",  name:"Tercer ojo",  bija:"OM",  hz:852, ratio:5/3,  hueCenter:270, zone:"Entrecejo · intuición y claridad",          how:"Cantá «OOOM» largo: abrí en «A», redondeá en «U» y cerrá los labios en «M». Notá la vibración en el entrecejo." },
+    { id:"crown",  name:"Corona",      bija:"NG",  hz:963, ratio:15/8, hueCenter:300, zone:"Coronilla · quietud y apertura",            how:"Zumbá «NNNG» con la boca cerrada y la lengua relajada. Notá la vibración en la cabeza." }
+  ];
+  CHAKRAS.forEach(function(c){ c.color = "hsl(" + c.hueCenter + " 85% 60%)"; });
+  var EXTRA = {root:{p:4,el:"Tierra",say:"lam",aff:"Estoy a salvo y bien apoyado."},sacral:{p:6,el:"Agua",say:"vam",aff:"Disfruto fluir y crear."},solar:{p:10,el:"Fuego",say:"ram",aff:"Actúo con confianza y claridad."},heart:{p:12,el:"Aire",say:"yam",aff:"Doy y recibo amor con calma."},throat:{p:16,el:"Éter",say:"ham",aff:"Expreso mi verdad con suavidad."},third:{p:2,el:"Luz",say:"om",aff:"Confío en mi intuición."},crown:{p:24,el:"Conciencia",say:"mmm",aff:"Estoy abierto y en quietud."}};
+  CHAKRAS.forEach(function(c){ Object.assign(c, EXTRA[c.id]); });
+  ["Muladhara","Svadhisthana","Manipura","Anahata","Vishuddha","Ajna","Sahasrara"].forEach(function(s,i){ CHAKRAS[i].sk = s; });
+  var RANGES = { all:[0,7], low:[0,3], high:[3,7] };
+  var BY_ID = {}; CHAKRAS.forEach(function(c){ BY_ID[c.id] = c; });
+  // formantes [Hz, Q, ganancia] para las vocales del timbre «coro»
+  var VOWELS = {
+    a:[[700,8,1],[1150,10,.55],[2600,12,.3]],
+    o:[[450,8,1],[800,9,.6],[2830,12,.2]],
+    u:[[300,8,1],[870,9,.4],[2240,12,.15]],
+    m:[[250,6,1],[1000,6,.12],[2100,8,.05]]
+  };
+  var TRIM = { puro:1, coro:1.8, cuenco:1, cristal:1 };
+  var NOTES = ["Do","Do#","Re","Re#","Mi","Fa","Fa#","Sol","Sol#","La","La#","Si"];
+
+  /* ================= ajustes (persisten) ================= */
+  var DEF = { seq:"map", breath:"4-8", cycles:2, dir:"up", loop:true, duration:0, combined:true, selOnly:false, vol:.34, semi:0, verb:.35, timbre:"puro", tuning:"solfeggio", range:"all", immersive:false, bell:true, breathSnd:true, drone:false, speak:false, haptic:true, aura:true };
+  var BIND = [
+    ["seq","toningSeq","v"],["breath","toningBreathSel","v"],["cycles","toningCycles","n"],["dir","toningDir","v"],["range","toningRange","v"],["immersive","toningImmersive","c"],
+    ["loop","toningLoop","c"],["duration","toningDuration","n"],["combined","toningCombined","c"],["selOnly","toningSelectedOnly","c"],
+    ["vol","toningVol","n"],["semi","toningTranspose","n"],["verb","toningVerb","n"],["timbre","toningTimbre","v"],
+    ["tuning","toningTuning","v"],["bell","toningBell","c"],["breathSnd","toningBreathSnd","c"],["drone","toningDrone","c"],["speak","toningSpeak","c"],["haptic","toningHaptic","c"],["aura","toningAuraChk","c"]
+  ];
+  var S = loadSettings();
+  function loadSettings(){
+    var o = {}; try { o = JSON.parse(localStorage.getItem(LS_KEY) || "{}") || {}; } catch(_){ o = {}; }
+    var r = {}; for (var k in DEF) r[k] = (k in o && typeof o[k] === typeof DEF[k]) ? o[k] : DEF[k];
+    return r;
+  }
+  var saveT = 0;
+  function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(function(){ try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){} }, 300); }
+
+  /* ================= elementos ================= */
+  var btn=$("toningBtn"), panel=$("toningPanel"), statusEl=$("toningStatus"), playBtn=$("toningPlayBtn"), stopBtn=$("toningStopBtn"),
+      closeBtn=$("toningCloseBtn"), closeX=$("toningCloseX"), volVal=$("toningVolVal"), semiVal=$("toningTransposeVal"), verbVal=$("toningVerbVal"),
+      micOnEl=$("toningMicOn"), snd=$("soundBtn"), guideVowel=$("toningGuideVowel"), guideZone=$("toningGuideZone"), guideSub=$("toningGuideSub"),
+      guideHow=$("toningGuideHow"), chipsBox=$("toningVowelChips"), hud=$("toningHud"), hudVowel=$("toningHudVowel"), hudName=$("toningHudName"),
+      hudHint=$("toningHudHint"), breathBox=$("toningBreath"), breathFill=$("toningBreathFill"), breathTxt=$("toningBreathTxt"),
+      micNote=$("toningMicNote"), micDot=$("toningMicDot"), micMatch=$("toningMicMatch"), micScore=$("toningMicScore"), micTip=$("toningMicTip"),
+      timeEl=$("toningTime"), srEl=$("toningSR"),
+      progressEl=$("toningProgress"), progressFill=$("toningProgressFill"),
+      hudProgress=$("toningHudProgress"), hudProgressFill=$("toningHudProgressFill");
+
+  var hudBreath = null;
+  if (hud) { hudBreath = D.createElement("div"); hudBreath.className = "th-breath"; hud.appendChild(hudBreath); }
+
+  function syncUI(){
+    BIND.forEach(function(b){
+      var e = $(b[1]); if (!e) return; var v = S[b[0]];
+      if (b[2] === "c") e.checked = !!v; else { e.value = String(v); if (e.tagName === "SELECT" && e.value !== String(v)) { S[b[0]] = DEF[b[0]]; e.value = String(DEF[b[0]]); } }
+    });
+    labels();
+  }
+  function readUI(){
+    BIND.forEach(function(b){
+      var e = $(b[1]); if (!e) return;
+      if (b[2] === "c") S[b[0]] = !!e.checked;
+      else if (b[2] === "n") { var n = parseFloat(e.value); if (isFinite(n)) S[b[0]] = n; }
+      else S[b[0]] = e.value;
+    });
+    S.cycles = clamp(Math.round(S.cycles), 1, 8); S.semi = clamp(Math.round(S.semi), -12, 12);
+    S.vol = clamp(S.vol, .05, .7); S.verb = clamp(S.verb, 0, .8); S.duration = Math.max(0, Math.round(S.duration));
+    labels(); saveSoon();
+  }
+  function labels(){
+    if (volVal) volVal.textContent = Math.round(S.vol * 100) + "%";
+    if (verbVal) verbVal.textContent = Math.round(S.verb * 100) + "%";
+    try { D.body.classList.toggle("toning-noaura", !S.aura); D.body.classList.toggle("toning-immersive", !!S.immersive); } catch(_){}
+    if (semiVal) semiVal.textContent = (S.semi > 0 ? "+" : S.semi < 0 ? "−" : "") + Math.abs(S.semi) + " st";
+  }
+
+  /* ================= estado ================= */
+  var ctx=null, master=null, dryBus=null, wetGain=null, noiseBuf=null, breath=null;
+  var voices = {};
+  var active=false, paused=false, finishing=false, present=[], weights={}, selWeights={}, hasSel=false, counts={}, edges={}, bubbleCh=new Map(), curT={}, seq=[];
+  var solo=null, lead=null, seqIndex=0, lastStep=-1, lastKey=null, phase="tone", tAccum=0, tLast=0, tick=0, sig="", sigT=0, lastLeadId=null, omStage="a";
+  var mic = { stream:null, src:null, an:null, buf:null, raf:0, last:0, cs:0, flog:0, has:false, tone:0, ok:0, voiced:0, cycTone:0, cycOk:0 };
+  var yinBuf = null, painting = false, hudHideT = 0, scanT = 0;
+
+  function setStatus(m){ if (statusEl) statusEl.textContent = m; }
+  function muted(){ return !!(snd && snd.classList.contains("off")); }
+  function breathPattern(){ var v = S.breath; if (v === "off") return null; var p = v.split("-"); return { inhale:+p[0], tone:+p[1] }; }
+  function pitchOf(c){ var base = S.tuning === "scale" ? 261.63 * c.ratio : c.hz / 2; return base * Math.pow(2, S.semi / 12); }
+  function noteName(f){ var m = Math.round(12 * Math.log2(f / 440)) + 69; return NOTES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1); }
+  function fmtTime(s){ s = Math.max(0, Math.floor(s)); var m = Math.floor(s / 60), r = s % 60; return m + ":" + (r < 10 ? "0" : "") + r; }
+
+  /* ================= audio ================= */
+  function makeImpulse(sec){
+    var rate = ctx.sampleRate, len = Math.floor(rate * sec), ir = ctx.createBuffer(2, len, rate), pre = Math.floor(rate * 0.02);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = ir.getChannelData(ch), y = 0;
+      for (var i = 0; i < len; i++) {
+        if (i < pre) { d[i] = 0; continue; }
+        var p = i / len, a = 0.5 * Math.pow(1 - p, 1.4) + 0.06;   // cola que se va oscureciendo
+        y += a * ((Math.random() * 2 - 1) * Math.pow(1 - p, 2.6) - y);
+        d[i] = y * 2.2;
+      }
+    }
+    return ir;
+  }
+  function ensureCtx(){
+    if (!ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) throw new Error("Este navegador no tiene AudioContext");
+      /* iOS/Safari: sin esto el interruptor de silencio del iPhone enmudece Web Audio */
+      try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch(_){}
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 0.0001;
+      try {
+        var comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -20; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.05; comp.release.value = 0.4;
+        master.connect(comp); comp.connect(ctx.destination);
+      } catch(_) { master.connect(ctx.destination); }
+      dryBus = ctx.createGain(); dryBus.connect(master);
+      wetGain = ctx.createGain(); wetGain.gain.value = S.verb;
+      try { var conv = ctx.createConvolver(); conv.buffer = makeImpulse(4.5); dryBus.connect(conv); conv.connect(wetGain); wetGain.connect(master); } catch(_){}
+      try {
+        var n = Math.floor(ctx.sampleRate * 2); noiseBuf = ctx.createBuffer(1, n, ctx.sampleRate);
+        var d = noiseBuf.getChannelData(0); for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * 0.4;
+        var src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+        var bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 600; bp.Q.value = 0.7;
+        var bg = ctx.createGain(); bg.gain.value = 0.0001;
+        src.connect(bp); bp.connect(bg); bg.connect(dryBus); src.start();
+        breath = { src:src, bp:bp, g:bg };
+      } catch(_){ breath = null; }
+    }
+    if (ctx.state !== "running") ctx.resume().catch(function(){});
+    return ctx;
+  }
+
+  /* ---------- burbujas ---------- */
+  function hueOf(el){
+    try {
+      var w = el.parentNode, raw = (w && w.style && w.style.getPropertyValue("--hue")) || el.style.getPropertyValue("--hue");
+      var n = parseFloat((raw || "").trim());
+      if (!isFinite(n)) n = parseFloat(getComputedStyle(el).getPropertyValue("--hue").trim());
+      if (isFinite(n)) return ((n % 360) + 360) % 360;
+    } catch(_){}
+    var t = (el.textContent || "").slice(0, 40), h = 0; for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0; return h % 360;
+  }
+  function sizeOf(el){
+    try {
+      var w = el.parentNode, raw = (w && w.style && w.style.getPropertyValue("--bubble-scale")) || "";
+      var s = parseFloat(raw); if (!isFinite(s)) s = parseFloat(getComputedStyle(el).getPropertyValue("--bubble-scale"));
+      return clamp(isFinite(s) ? s : 1, 0.6, 1.8);
+    } catch(_){ return 1; }
+  }
+  function chakraFromHue(hue){
+    var best = CHAKRAS[0], bd = 999;
+    CHAKRAS.forEach(function(c){ var d = Math.abs(hue - c.hueCenter); if (d > 180) d = 360 - d; if (d < bd) { bd = d; best = c; } });
+    return best;
+  }
+  function getBubbles(){
+    var scene = $("scene"); if (!scene) return [];
+    return Array.prototype.filter.call(scene.querySelectorAll(".bubble"), function(b){
+      return !(b.closest && (b.closest(".bubble-wrap.in-collapsed") || b.closest(".cinema-hidden")));
+    });
+  }
+  function cl(b, c){ return b.classList.contains(c); }
+  function isSel(b){ return cl(b,"selected") || cl(b,"focused") || cl(b,"kb-focus") || cl(b,"search-current"); }
+  function isHit(b){ return cl(b,"search-hit") || cl(b,"search-current"); }
+  function isDim(b){ return cl(b,"dimmed") || cl(b,"search-dim"); }
+  function getConnections(){
+    try { var a = JSON.parse(localStorage.getItem("burbujas.connections.v1") || "[]"); return Array.isArray(a) ? a.filter(function(c){ return c && c.f && c.t; }) : []; } catch(_){ return []; }
+  }
+  function bubbleId(el){
+    var w = el.closest && el.closest(".bubble-wrap"); if (w && w.dataset && w.dataset.id) return w.dataset.id;
+    if (el.dataset && el.dataset.id) return el.dataset.id; if (el.id) return el.id;
+    if (!el.__toningUid) el.__toningUid = "b" + Math.random().toString(36).slice(2, 9); return el.__toningUid;
+  }
+  function signature(){
+    var parts = [], bs = getBubbles();
+    for (var i = 0; i < bs.length; i++) { var w = bs[i].parentNode, st = w && w.style; parts.push(st ? (st.getPropertyValue("--hue") + "/" + st.getPropertyValue("--bubble-scale")) : "?"); }
+    return bs.length + "|" + parts.join(",");
+  }
+
+  /* ---------- voces ---------- */
+  function vowelFor(c){ return c.id === "crown" ? "m" : "a"; }
+  function setVowel(v, key, tc, immediate){
+    if (!v || !v.form || !ctx) return;
+    var tbl = VOWELS[key] || VOWELS.a, now = ctx.currentTime, sc = 0.9 + 0.2 * (CHAKRAS.indexOf(v.c) / 6);
+    for (var i = 0; i < 3; i++) {
+      var f = tbl[i], fm = v.form[i];
+      try {
+        if (immediate) { fm.bp.frequency.value = f[0] * sc; fm.bp.Q.value = f[1]; fm.g.gain.value = f[2]; }
+        else { fm.bp.frequency.setTargetAtTime(f[0] * sc, now, tc); fm.bp.Q.setTargetAtTime(f[1], now, tc); fm.g.gain.setTargetAtTime(f[2], now, tc); }
+      } catch(_){}
+    }
+    v.vowel = key;
+  }
+  function createVoice(c){
+    var tm = S.timbre, hz = pitchOf(c), idx = CHAKRAS.indexOf(c), i;
+    var out = ctx.createGain(); out.gain.value = 0.0001;
+    var amp = ctx.createGain(); amp.gain.value = 1; out.connect(amp);
+    var pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    if (pan) { pan.pan.value = (idx - 3) / 7; amp.connect(pan); pan.connect(dryBus); } else amp.connect(dryBus);
+    var v = { c:c, tm:tm, g:out, oscs:[], srcs:[], nodes:[out, amp], fifth:null, form:null, noiseBp:null, vowel:null, lg:null, vib:0 };
+    if (pan) v.nodes.push(pan);
+    function osc(type, mult, gain, detune, dest){
+      var o = ctx.createOscillator(), og = ctx.createGain();
+      o.type = type; o.frequency.value = hz * mult; o.detune.value = detune || 0; og.gain.value = gain;
+      o.connect(og); og.connect(dest); o.start();
+      v.oscs.push({ o:o, m:mult }); v.srcs.push(o); v.nodes.push(og); return og;
+    }
+    if (tm === "coro") {
+      var pre = ctx.createGain(); pre.gain.value = 0.22; v.nodes.push(pre);
+      var soft = ctx.createBiquadFilter(); soft.type = "lowpass"; soft.frequency.value = 2200; soft.Q.value = 0.4; pre.connect(soft); v.nodes.push(soft);
+      osc("sawtooth", 1, 1, -9, pre); osc("sawtooth", 1, 1, 0, pre); osc("sawtooth", 1, 1, 9, pre); osc("triangle", 0.5, 0.6, 0, pre);
+      v.fifth = osc("sine", 1.5, 0.12, 0, pre);
+      var body = ctx.createGain(); body.gain.value = 0.3; soft.connect(body); body.connect(out); v.nodes.push(body);
+      v.form = [];
+      for (i = 0; i < 3; i++) {
+        var bq = ctx.createBiquadFilter(); bq.type = "bandpass"; var fg = ctx.createGain();
+        soft.connect(bq); bq.connect(fg); fg.connect(out); v.form.push({ bp:bq, g:fg }); v.nodes.push(bq, fg);
+      }
+      setVowel(v, vowelFor(c), 0, true);
+    } else if (tm === "cuenco") {
+      /* Cuenco tibetano mejorado: parciales inarmónicos + golpe inicial + shimmer lento */
+      osc("sine", 1, 0.38, -2, out); osc("sine", 1, 0.32, 3, out);
+      osc("sine", 2.76, 0.22, -1, out); osc("sine", 4.07, 0.11, 2, out);
+      osc("sine", 5.43, 0.09, -2, out); osc("sine", 6.8, 0.05, 1, out); osc("sine", 8.6, 0.03, 0, out);
+      v.fifth = osc("sine", 1.5, 0.06, 0, out);
+      /* golpe / ataque de cuenco (ruido corto filtrado) */
+      if (noiseBuf) {
+        try {
+          var strike = ctx.createBufferSource(); strike.buffer = noiseBuf;
+          var sbp = ctx.createBiquadFilter(); sbp.type = "bandpass"; sbp.frequency.value = hz * 3.2; sbp.Q.value = 2.5;
+          var sg = ctx.createGain(); sg.gain.setValueAtTime(0.14, ctx.currentTime);
+          sg.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.55);
+          strike.connect(sbp); sbp.connect(sg); sg.connect(out); strike.start(); strike.stop(ctx.currentTime + 0.6);
+          v.nodes.push(sbp, sg);
+        } catch(_){}
+      }
+    } else if (tm === "cristal") {
+      /* Cuenco de cristal: parciales más puros + brillo alto + ligero shimmer */
+      osc("sine", 1, 0.34, -1.5, out); osc("sine", 1, 0.3, 2, out);
+      osc("sine", 2, 0.18, 0, out); osc("sine", 3, 0.12, 2, out);
+      osc("sine", 4.0, 0.07, -2, out); osc("sine", 5.0, 0.045, 1, out);
+      osc("sine", 6.0, 0.03, -1, out); osc("sine", 7.0, 0.018, 0, out);
+      v.fifth = osc("sine", 1.5, 0.07, 0, out);
+    } else {
+      osc("sine", 1, 0.5, -4, out); osc("sine", 1, 0.4, 4, out);
+      v.fifth = osc("sine", 1.5, 0.12, 0, out); osc("triangle", 2, 0.06, 0, out);
+    }
+    /* Tercera mayor suave para armonía rica (se activa solo si hay conexiones) */
+    if (!v.third) {
+      try {
+        var tOg = ctx.createGain(); tOg.gain.value = 0.0001;
+        var tO = ctx.createOscillator(); tO.type = "sine"; tO.frequency.value = hz * 1.25; /* tercera mayor just intonation ~5/4 */
+        tO.connect(tOg); tOg.connect(out); tO.start();
+        v.oscs.push({ o:tO, m:1.25 }); v.srcs.push(tO); v.nodes.push(tOg); v.third = tOg;
+      } catch(_){ v.third = null; }
+    }
+    // vibrato lento (más orgánico y distinto por timbre)
+    var lfo = ctx.createOscillator(), lg = ctx.createGain();
+    v.vib = tm === "coro" ? 0.0038 : tm === "cuenco" ? 0.0012 : tm === "cristal" ? 0.0022 : 0.0035;
+    lfo.frequency.value = tm === "coro" ? 4.5 + Math.random() * 0.9 : tm === "cristal" ? 0.22 + Math.random() * 0.12 : 0.14 + Math.random() * 0.1;
+    lg.gain.value = hz * v.vib;
+    lfo.connect(lg); v.oscs.forEach(function(p){ lg.connect(p.o.frequency); }); lfo.start();
+    v.srcs.push(lfo); v.nodes.push(lg); v.lg = lg;
+    // tremolo muy lento
+    var trem = ctx.createOscillator(), tg = ctx.createGain();
+    trem.frequency.value = (tm === "cuenco" ? 0.05 : 0.07) + Math.random() * 0.04;
+    tg.gain.value = tm === "cristal" ? 0.09 : 0.12;
+    trem.connect(tg); tg.connect(amp.gain); trem.start(); v.srcs.push(trem); v.nodes.push(tg);
+    // aire / respiración del tono
+    if (noiseBuf && tm !== "cuenco") {
+      try {
+        var nz = ctx.createBufferSource(); nz.buffer = noiseBuf; nz.loop = true;
+        var nbp = ctx.createBiquadFilter(); nbp.type = "bandpass"; nbp.frequency.value = hz * (tm === "cristal" ? 2.8 : 2); nbp.Q.value = tm === "cristal" ? 0.9 : 1.2;
+        var ng = ctx.createGain(); ng.gain.value = tm === "coro" ? 0.02 : tm === "cristal" ? 0.016 : 0.012;
+        nz.connect(nbp); nbp.connect(ng); ng.connect(out); nz.start();
+        v.srcs.push(nz); v.nodes.push(nbp, ng); v.noiseBp = nbp;
+      } catch(_){}
+    }
+    return v;
+  }
+  function stopVoice(v, fast){
+    if (!v || !ctx) return;
+    var now = ctx.currentTime, tc = fast ? 0.45 : 2.4;
+    try {
+      v.g.gain.cancelScheduledValues(now);
+      v.g.gain.setValueAtTime(Math.max(0.0001, v.g.gain.value), now);
+      /* release más orgánico: curva exponencial más larga */
+      v.g.gain.exponentialRampToValueAtTime(0.0001, now + tc);
+    } catch(_){}
+    setTimeout(function(){
+      v.srcs.forEach(function(s){ try { s.stop(); } catch(_){} });
+      v.nodes.forEach(function(n){ try { n.disconnect(); } catch(_){} });
+    }, tc * 1000 + 320);
+  }
+  function fadeMaster(to, t){
+    if (!master || !ctx) return; var now = ctx.currentTime;
+    master.gain.cancelScheduledValues(now); master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), now);
+    master.gain.exponentialRampToValueAtTime(Math.max(0.0001, to), now + (t || 0.5));
+  }
+  function micActive(){ return !!mic.stream; }
+
+  /** Qué chakras suenan ahora y con qué nivel */
+  function targets(){
+    var t = {}, base = S.vol, mode = S.seq, trim = (TRIM[S.timbre] || 1) * (micActive() ? 0.55 : 1);
+    if (solo) { t[solo] = Math.min(0.6, base * trim); return t; }
+    if ((mode === "journey" || mode === "single") && lead) { t[lead.id] = Math.min(0.6, base * trim); return t; }
+    /* Modo mapa: si hay burbujas seleccionadas / enfocadas, suenan SOLO sus chakras.
+       Sin selección, suena el mapa completo pero limitado a los 4 chakras con más peso
+       para que no se vuelva una sopa de tonos. */
+    var useSel = (mode === "map" && (hasSel || S.selOnly));
+    var pool = useSel ? Object.keys(selWeights) : present.slice();
+    if (useSel && !pool.length) return t;
+    var wsrc = useSel ? selWeights : weights;
+    /* Ordenar por peso y quedarse con los top 4 (salvo selección explícita de más) */
+    if (!useSel && pool.length > 4) {
+      pool = pool.slice().sort(function(a, b){ return (wsrc[b] || 0) - (wsrc[a] || 0); }).slice(0, 4);
+    }
+    var total = 0; pool.forEach(function(id){ total += wsrc[id] || 0; });
+    var n = Math.max(1, pool.length);
+    pool.forEach(function(id){
+      var share = (wsrc[id] || 0) / Math.max(0.0001, total);
+      /* Balance más claro: el líder destaca, el resto se reparte sin aplastarse */
+      var lv = base * (0.42 + 0.58 * Math.pow(share, 0.55)) / Math.pow(n, 0.42);
+      if (lead && lead.id === id) lv *= 1.65;
+      t[id] = Math.min(0.62, lv * trim);
+    });
+    return t;
+  }
+
+  function applyVoices(){
+    if (!active || !ctx) return;
+    curT = targets();
+    setDrone();
+    if (paused) { fadeMaster(0.0001, 0.55); return; }
+    if (muted()) { setStatus("🔇 Activá el 🔊 de la barra para escucharlo."); fadeMaster(0.0001, 0.35); return; }
+    var now = ctx.currentTime, harmony = !!S.combined, bp = breathPattern();
+    /* Inhalar: casi silencio (queda un hilo muy suave). Cantar: nivel pleno con ataque lento. */
+    var mul = (bp && phase === "inhale") ? 0.035 : 1;
+    /* Crossfade más suave: constantes de tiempo más largas */
+    var tcGain = phase === "inhale" ? 1.15 : 0.95;
+    var tcFreq = 0.42; /* portamento / glissando entre chakras */
+    Object.keys(voices).forEach(function(id){ if (!(id in curT)) { stopVoice(voices[id]); delete voices[id]; } });
+    Object.keys(curT).forEach(function(id){
+      var c = BY_ID[id], v = voices[id], hz = pitchOf(c);
+      if (v && v.tm !== S.timbre) { stopVoice(v, true); delete voices[id]; v = null; }
+      if (!v) v = voices[id] = createVoice(c);
+      /* Glissando suave al cambiar de frecuencia (en vez de salto) */
+      v.oscs.forEach(function(p){
+        try {
+          var target = hz * p.m;
+          p.o.frequency.cancelScheduledValues(now);
+          p.o.frequency.setTargetAtTime(target, now, tcFreq);
+        } catch(_){}
+      });
+      try { v.lg.gain.setTargetAtTime(hz * v.vib, now, 0.2); } catch(_){}
+      if (v.noiseBp) {
+        try {
+          var nf = hz * (S.timbre === "cristal" ? 2.8 : 2);
+          v.noiseBp.frequency.setTargetAtTime(nf, now, 0.25);
+        } catch(_){}
+      }
+      /* Armonía: quinta base + refuerzo según conexiones.
+         Si combined: intervalos más ricos según distancia de chakras conectados. */
+      var fifthBase = (hasSel && S.seq === "map") ? 0.035 : 0.10;
+      var edgeN = edges[id] || 0;
+      var fifth = fifthBase + (harmony ? Math.min(3, edgeN) * 0.055 : 0);
+      try { if (v.fifth) v.fifth.gain.setTargetAtTime(fifth, now, 0.45); } catch(_){}
+      /* Intervalos extra (tercera / cuarta) cuando hay conexiones y armonía rica */
+      if (harmony && v.third && edgeN > 0) {
+        try { v.third.gain.setTargetAtTime(Math.min(0.14, 0.04 + edgeN * 0.035), now, 0.5); } catch(_){}
+      } else if (v.third) {
+        try { v.third.gain.setTargetAtTime(0.0001, now, 0.4); } catch(_){}
+      }
+      try { v.g.gain.setTargetAtTime(Math.max(0.0002, curT[id] * mul), now, tcGain); } catch(_){}
+    });
+    fadeMaster(Object.keys(curT).length ? 0.9 : 0.0001, 0.9);
+  }
+
+  /** inhalación suave de fondo: sube durante «Inhalá» y se apaga al empezar a cantar */
+  function scheduleBreathNoise(){
+    if (!breath || !ctx) return;
+    var now = ctx.currentTime, g = breath.g.gain, bp = breathPattern();
+    try {
+      g.cancelScheduledValues(now); g.setValueAtTime(Math.max(0.0001, g.value), now);
+      breath.bp.frequency.cancelScheduledValues(now);
+      if (S.breathSnd && bp && phase === "inhale" && !paused && !muted()) {
+        /* Inhalación más presente: curva en arco + barrido de frecuencia más amplio */
+        var lvl = 0.16 * (S.vol / 0.34), d = bp.inhale;
+        g.linearRampToValueAtTime(lvl * 0.25, now + d * 0.12);
+        g.linearRampToValueAtTime(lvl, now + d * 0.55);
+        g.linearRampToValueAtTime(lvl * 0.55, now + d * 0.88);
+        g.linearRampToValueAtTime(0.0001, now + d + 0.12);
+        breath.bp.frequency.setValueAtTime(280, now);
+        breath.bp.frequency.linearRampToValueAtTime(900, now + d * 0.45);
+        breath.bp.frequency.linearRampToValueAtTime(1600, now + d);
+      } else g.setTargetAtTime(0.0001, now, 0.18);
+    } catch(_){}
+  }
+  function chime(hz, long){
+    if (!ctx || !S.bell || muted() || paused) return;
+    var now = ctx.currentTime, k = (S.vol / 0.34), parts = long ? [[1, 0.09, 4.5], [2.01, 0.04, 3.2], [3, 0.02, 2.2]] : [[1, 0.07, 2.4], [2.01, 0.03, 1.6], [3, 0.015, 1]];
+    parts.forEach(function(p){
+      try {
+        var o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sine"; o.frequency.value = hz * p[0];
+        g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(p[1] * k, now + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, now + p[2]);
+        o.connect(g); g.connect(dryBus); o.start(now); o.stop(now + p[2] + 0.05);
+      } catch(_){}
+    });
+  }
+
+  /* ================= escaneo del mapa ================= */
+  function buildSeq(mode){
+    var ids = mode === "journey" ? CHAKRAS.slice.apply(CHAKRAS, RANGES[S.range] || RANGES.all).map(function(c){ return c.id; }) : present.slice();
+    var a = ids.map(function(id){ return BY_ID[id]; });
+    if (S.dir === "down") a.reverse();
+    else if (S.dir === "updown" && a.length > 2) a = a.concat(a.slice(1, -1).reverse());
+    return a;
+  }
+  function scan(){
+    if (!active) return;
+    var bubbles = getBubbles(), idCh = {}; weights = {}; selWeights = {}; hasSel = false; counts = {}; bubbleCh = new Map(); var selCh = null, selCount = 0;
+    bubbles.forEach(function(b){
+      if (isDim(b)) return;
+      var s = isSel(b), hit = isHit(b);
+      if (S.selOnly && !s && !hit) return;
+      var c = chakraFromHue(hueOf(b));
+      var w = sizeOf(b) * (cl(b,"done") ? 0.45 : 1) * (cl(b,"urgent") ? 1.25 : 1);
+      bubbleCh.set(b, c.id); idCh[bubbleId(b)] = c.id;
+      weights[c.id] = (weights[c.id] || 0) + w * (s ? 2.2 : 1);
+      counts[c.id] = (counts[c.id] || 0) + 1;
+      if (s || hit) {
+        hasSel = true; selCount++;
+        selWeights[c.id] = (selWeights[c.id] || 0) + w * (s ? 2.2 : 1.4);
+        if (s && !selCh) selCh = c;
+      }
+    });
+    present = CHAKRAS.filter(function(c){ return weights[c.id]; }).map(function(c){ return c.id; });
+    edges = {};
+    getConnections().forEach(function(cn){
+      var a = idCh[cn.f], b = idCh[cn.t]; if (!a || !b || a === b) return;
+      edges[a] = (edges[a] || 0) + 1; edges[b] = (edges[b] || 0) + 1;
+    });
+    var mode = S.seq;
+    seq = buildSeq(mode === "journey" ? "journey" : "single");
+    if (solo) lead = BY_ID[solo];
+    else if (mode === "journey") lead = seq.length ? seq[seqIndex % seq.length] : null;
+    else if (!present.length) lead = null;
+    else if (mode === "map") {
+      /* Priorizá el chakra de la selección; si hay varios, el de mayor peso seleccionado */
+      if (hasSel) {
+        var bestId = null, bestW = -1;
+        Object.keys(selWeights).forEach(function(id){ if (selWeights[id] > bestW) { bestW = selWeights[id]; bestId = id; } });
+        lead = bestId ? BY_ID[bestId] : (selCh || null);
+      } else lead = selCh || (present.length === 1 ? BY_ID[present[0]] : null);
+    }
+    else lead = seq.length ? seq[seqIndex % seq.length] : null;
+    curT = targets();
+    paint(); applyVoices(); updateGuide();
+    sig = signature();
+    if (!muted() && !paused) setStatus(statusText());
+  }
+  function updateProgress(){
+    var mode = S.seq, show = active && !solo && (mode === "journey" || mode === "single") && seq.length > 0;
+    var pct = 0;
+    if (show) {
+      var step = seqIndex % Math.max(1, seq.length);
+      /* fracción del recorrido actual (no del bucle completo) */
+      pct = ((step + (phase === "tone" ? 0.55 : 0.15)) / seq.length) * 100;
+      if (!S.loop && seqIndex >= seq.length) pct = 100;
+    }
+    if (progressEl) { progressEl.hidden = !show; if (progressFill) progressFill.style.width = (show ? clamp(pct, 0, 100) : 0) + "%"; }
+    if (hudProgress) { hudProgress.hidden = !show; if (hudProgressFill) hudProgressFill.style.width = (show ? clamp(pct, 0, 100) : 0) + "%"; }
+  }
+  function statusText(){
+    var sounding = Object.keys(curT), n = sounding.length, mode = S.seq;
+    if (!n) return hasSel ? "Selección sin color para sonar" : "Ninguna burbuja para sonar · tocá un chakra o seleccioná burbujas";
+    var who = solo ? "solo " + BY_ID[solo].bija + " · " + BY_ID[solo].name
+      : mode === "journey" ? "recorrido " + (Math.min(seqIndex, Math.max(0, seq.length - 1)) % Math.max(1, seq.length) + 1) + "/" + seq.length + (lead ? " · " + lead.bija : "")
+      : mode === "single" ? (lead ? lead.bija + " · " + lead.name : "un chakra")
+      : sounding.map(function(id){ return BY_ID[id].bija; }).join(" · ");
+    var extra = "";
+    if (mode === "map" && !solo) {
+      extra = hasSel ? " · selección" : " · mapa";
+      extra += " · " + n + " tono" + (n === 1 ? "" : "s");
+    }
+    return "Sonando · " + who + extra;
+  }
+  function paint(){
+    painting = true;
+    var focusLead = active && !paused && !solo && (S.seq === "journey" || S.seq === "single" || (S.seq === "map" && hasSel));
+    try { D.body.classList.toggle("toning-focus-lead", focusLead); } catch(_){}
+    getBubbles().forEach(function(b){
+      var cid = bubbleCh.get(b), on = !!cid && !paused && (cid in curT), isLead = on && !!lead && cid === lead.id;
+      /* En recorrido / selección: atenuá lo que no suena para que el oído y la vista coincidan. */
+      var soft = focusLead && !on;
+      if (cl(b, "toning-active") !== on) b.classList.toggle("toning-active", on);
+      if (cl(b, "toning-lead") !== isLead) b.classList.toggle("toning-lead", isLead);
+      if (cl(b, "toning-soft") !== soft) b.classList.toggle("toning-soft", soft);
+    });
+    setTimeout(function(){ painting = false; }, 0);
+  }
+  function clearPaint(){
+    painting = true;
+    try { D.body.classList.remove("toning-focus-lead"); } catch(_){}
+    getBubbles().forEach(function(b){ b.classList.remove("toning-active", "toning-lead", "toning-soft"); });
+    setTimeout(function(){ painting = false; }, 0);
+  }
+  function scheduleScan(ms){ clearTimeout(scanT); scanT = setTimeout(scan, ms || 350); }
+
+  /* ================= guía visual ================= */
+  function buildChips(){
+    if (!chipsBox) return;
+    chipsBox.innerHTML = "";
+    CHAKRAS.forEach(function(c){
+      var b = D.createElement("button"); b.type = "button"; b.setAttribute("data-v", c.id); b.setAttribute("aria-pressed", "false");
+      b.title = c.name + " · " + c.zone + " — tocá para escucharlo solo; otra vez para volver al mapa";
+      b.style.setProperty("--c", c.color);
+      b.innerHTML = '<i></i><span>' + c.bija + '</span><small></small>';
+      chipsBox.appendChild(b);
+    });
+  }
+  function updateGuide(){
+    var c = lead;
+    if (chipsBox) Array.prototype.forEach.call(chipsBox.querySelectorAll("button"), function(b){
+      var id = b.getAttribute("data-v"), n = counts[id] || 0;
+      var on = active && !paused && (id in curT);
+      b.classList.toggle("on", on);
+      b.classList.toggle("lead", !!c && c.id === id && active);
+      b.classList.toggle("solo", solo === id);
+      var cc = BY_ID[id], si = seq.indexOf(cc);
+      b.classList.toggle("done", active && !solo && S.seq === "journey" && si > -1 && si < seqIndex % Math.max(1, seq.length));
+      b.classList.toggle("empty", active && !n && solo !== id && S.seq !== "journey");
+      b.setAttribute("aria-pressed", solo === id ? "true" : "false");
+      var sm = b.querySelector("small"); if (sm) sm.textContent = active && n ? String(n) : "";
+    });
+    if (!c) {
+      if (guideVowel) guideVowel.textContent = "—"; if (guideZone) guideZone.textContent = ""; if (guideSub) guideSub.textContent = "";
+      if (guideHow) guideHow.textContent = active ? "No hay burbujas para sonar. Tocá un chakra para escucharlo solo." : "Activá el modo. Cada color del mapa es un chakra con su tono y su sonido.";
+      if (hudVowel) hudVowel.textContent = "Chakras"; if (hudName) hudName.textContent = "";
+      if (hudHint) hudHint.textContent = active ? "No hay burbujas con color para sonar (¿atenuadas, ocultas o «solo selección»?). Tocá un chakra para escucharlo solo." : "Activá el modo para que el mapa suene.";
+      lastLeadId = null; bodyCol(null); updateProgress(); return;
+    }
+    var hz = pitchOf(c);
+    if (guideVowel) guideVowel.textContent = c.bija + " · " + c.name;
+    if (guideZone) guideZone.textContent = c.sk + " · " + c.zone;
+    if (guideSub) guideSub.textContent = Math.round(hz) + " Hz · " + noteName(hz) + (S.tuning === "solfeggio" ? " (base " + c.hz + " Hz)" : "");
+    if (guideHow) guideHow.textContent = c.how;
+    if (hudVowel) hudVowel.textContent = c.bija;
+    var nx = (active && !solo && S.seq !== "map" && seq.length > 1) ? seq[(seqIndex + 1) % seq.length] : null;
+    if (hudName) hudName.textContent = c.name + " · " + noteName(hz) + (nx ? "  →  " + nx.bija : "");
+    if (hudHint) hudHint.textContent = c.how;
+    if (hud) hud.style.setProperty("--tn-c", c.color);
+    D.body.style.setProperty("--tn-c", c.color); D.body.style.setProperty("--tn-y", (82 - CHAKRAS.indexOf(c) * 64 / 6).toFixed(1) + "%"); bodyCol(c);
+    var ga = $("toningGuideAff"); if (ga) ga.textContent = "Elemento " + c.el + " · «" + c.aff + "»";
+    if (lastLeadId !== c.id) paintLotus(c);
+    if (active && srEl && lastLeadId !== c.id) srEl.textContent = "Chakra " + c.name + ". Sonido " + c.bija + ". " + c.how;
+    lastLeadId = c.id;
+    updateProgress();
+  }
+  function setBreath(ph, el, dur){
+    if (breathBox) breathBox.style.display = ph ? "" : "none";
+    if (!ph) { if (hudBreath) hudBreath.textContent = ""; return; }
+    var left = Math.max(1, Math.ceil(dur - el)), b = lead ? lead.bija : "";
+    var txt = ph === "inhale" ? "Inhalá… " + left : "Cantá " + b + "… " + left;
+    if (breathFill) breathFill.style.width = clamp(el / dur * 100, 0, 100) + "%";
+    if (breathBox) breathBox.classList.toggle("inhale", ph === "inhale");
+    if (breathTxt) breathTxt.textContent = txt;
+    if (hudBreath) hudBreath.textContent = txt;
+  }
+  function setPhaseClass(ph){
+    var b = D.body; b.classList.toggle("toning-ph-inhale", ph === "inhale"); b.classList.toggle("toning-ph-tone", ph === "tone");
+  }
+  function positionHud(){
+    if (!hud) return;
+    var bottom = 24;
+    try {
+      var comp = $("composer");
+      if (comp && !comp.classList.contains("auto-hidden")) { var r = comp.getBoundingClientRect(); if (r.height > 0 && r.top < window.innerHeight) bottom = Math.round(window.innerHeight - r.top + 12); }
+      var tb = $("toolbar"); if (D.body.classList.contains("is-mobile") && tb) { var r2 = tb.getBoundingClientRect(); if (r2.height > 0) bottom = Math.max(bottom, Math.round(window.innerHeight - r2.top + 12)); }
+    } catch(_){}
+    hud.style.bottom = bottom + "px";
+  }
+  function updateButtons(){
+    if (btn) { btn.classList.toggle("active", active); btn.setAttribute("aria-pressed", active ? "true" : "false"); }
+    if (playBtn) {
+      playBtn.textContent = !active ? "▶ Activar chakras" : paused ? "▶ Continuar" : "⏸ Pausar";
+      playBtn.setAttribute("aria-label", !active ? "Activar chakras" : paused ? "Continuar" : "Pausar");
+    }
+    if (stopBtn) stopBtn.disabled = !active;
+  }
+  function updateTime(){
+    if (!timeEl) return;
+    timeEl.textContent = active ? fmtTime(tAccum) + (S.duration ? " / " + S.duration + ":00" : "") : "";
+  }
+
+  /* ================= reloj de respiración / secuencia ================= */
+  function stepClock(){ var n = performance.now() / 1000; if (!paused) tAccum += Math.max(0, n - tLast); tLast = n; }
+  function loop(){
+    if (!active) return;
+    stepClock();
+    if (paused || finishing) { updateTime(); return; }
+    var bp = breathPattern(), cycLen = bp ? bp.inhale + bp.tone : 8;
+    var cyc = Math.floor(tAccum / cycLen), within = tAccum - cyc * cycLen;
+    var ph = bp ? (within < bp.inhale ? "inhale" : "tone") : "tone";
+    var dur = bp ? (ph === "inhale" ? bp.inhale : bp.tone) : cycLen, el0 = bp ? (ph === "inhale" ? within : within - bp.inhale) : within;
+    if (S.duration > 0 && tAccum >= S.duration * 60) { finish(); return; }
+    var step = Math.floor(cyc / Math.max(1, S.cycles));
+    if (!solo && S.seq !== "map" && !S.loop && seq.length && step >= seq.length) { finish(); return; }
+    if (step !== lastStep) { lastStep = step; seqIndex = step; scan(); }
+    var key = cyc + ":" + ph;
+    if (key !== lastKey) { lastKey = key; var prev = phase; phase = ph; onPhaseChange(prev); }
+    setBreath(bp ? ph : null, el0, dur);
+    if (ph === "tone" && voices.third && voices.third.form) {
+      var p = el0 / dur, st = p < 0.3 ? "a" : p < 0.7 ? "o" : p < 0.88 ? "u" : "m";
+      if (voices.third.vowel !== st) setVowel(voices.third, st, 0.35);
+    }
+    updateTime();
+    /* progreso suave dentro del chakra actual */
+    if (active && !solo && (S.seq === "journey" || S.seq === "single") && seq.length) {
+      var stepN = seqIndex % Math.max(1, seq.length);
+      var frac = (stepN + (bp ? (ph === "inhale" ? (el0 / Math.max(0.01, dur)) * 0.35 : 0.35 + (el0 / Math.max(0.01, dur)) * 0.65) : (el0 / Math.max(0.01, dur)))) / seq.length;
+      var pct = clamp(frac * 100, 0, 100);
+      if (progressFill) { if (progressEl) progressEl.hidden = false; progressFill.style.width = pct + "%"; }
+      if (hudProgressFill) { if (hudProgress) hudProgress.hidden = false; hudProgressFill.style.width = pct + "%"; }
+    }
+    var now = performance.now();
+    if (now - sigT > 700) { sigT = now; positionHud(); var s2 = signature(); if (s2 !== sig) { sig = s2; scheduleScan(250); } }
+  }
+  function onPhaseChange(prev){
+    var bp = breathPattern();
+    setPhaseClass(bp ? phase : null);
+    if (phase === "tone" && voices.third && voices.third.form) setVowel(voices.third, "a", 0.05);
+    applyVoices();
+    /* Ataque orgánico multi-etapa al empezar a cantar (bloom). */
+    if (phase === "tone" && ctx && !paused && !muted()) {
+      try {
+        var now = ctx.currentTime;
+        var attack = bp ? Math.min(1.35, Math.max(0.55, bp.tone * 0.14)) : 0.95;
+        Object.keys(voices).forEach(function(id){
+          var v = voices[id], tgt = curT[id];
+          if (!v || !tgt) return;
+          try {
+            var cur = Math.max(0.0002, v.g.gain.value);
+            var start = Math.min(cur, tgt * 0.08);
+            v.g.gain.cancelScheduledValues(now);
+            v.g.gain.setValueAtTime(start, now);
+            /* curva en dos tramos: subida rápida inicial + bloom suave */
+            v.g.gain.linearRampToValueAtTime(tgt * 0.55, now + attack * 0.28);
+            v.g.gain.linearRampToValueAtTime(tgt, now + attack);
+          } catch(_){}
+        });
+      } catch(_){}
+    }
+    scheduleBreathNoise();
+    if (phase === "tone") ripple();
+    if (phase === "tone" && bp && lead) chime(pitchOf(lead));
+    cues();
+    if (phase === "inhale" && prev === "tone") micCycleSummary();
+    mic.cycTone = 0; mic.cycOk = 0;
+  }
+  function setCssDurations(){
+    var bp = breathPattern(), b = D.body;
+    b.style.setProperty("--tn-in", (bp ? bp.inhale : 4) + "s"); b.style.setProperty("--tn-tone", (bp ? bp.tone : 8) + "s");
+  }
+
+  /* ================= micrófono: detección de tono (YIN) ================= */
+  function yin(buf, rate){
+    var n = buf.length, rms = 0, i; for (i = 0; i < n; i++) rms += buf[i] * buf[i]; rms = Math.sqrt(rms / n);
+    if (rms < 0.01) return -1;
+    var tauMax = Math.min(Math.floor(rate / 70), n >> 1), tauMin = Math.max(2, Math.floor(rate / 1000)), W = n - tauMax;
+    if (!yinBuf || yinBuf.length < tauMax + 1) yinBuf = new Float32Array(tauMax + 1);
+    var d = yinBuf, running = 0, tau, j, s, df; d[0] = 1;
+    for (tau = 1; tau <= tauMax; tau++) {
+      s = 0; for (j = 0; j < W; j++) { df = buf[j] - buf[j + tau]; s += df * df; }
+      running += s; d[tau] = running > 0 ? s * tau / running : 1;
+    }
+    var found = -1; tau = tauMin;
+    while (tau < tauMax) { if (d[tau] < 0.15) { while (tau + 1 < tauMax && d[tau + 1] < d[tau]) tau++; found = tau; break; } tau++; }
+    if (found < 0) { var mn = 1e9, mi = -1; for (tau = tauMin; tau <= tauMax; tau++) if (d[tau] < mn) { mn = d[tau]; mi = tau; } if (mn < 0.3) found = mi; else return -1; }
+    var better = found;
+    if (found > 1 && found < tauMax) { var s0 = d[found - 1], s1 = d[found], s2 = d[found + 1], a = s0 + s2 - 2 * s1; if (a !== 0) better = found + (s0 - s2) / (2 * a); }
+    return rate / better;
+  }
+  function micReset(){ mic.cs = 0; mic.flog = 0; mic.has = false; mic.tone = 0; mic.ok = 0; mic.voiced = 0; mic.cycTone = 0; mic.cycOk = 0; if (micScore) micScore.textContent = ""; }
+  function micCycleSummary(){
+    if (!micActive() || mic.cycTone < 1 || !micScore) return;
+    micScore.textContent = "Último ciclo: " + mic.cycOk.toFixed(1).replace(".", ",") + " s afinado de " + mic.cycTone.toFixed(0) + " s · sesión: " + fmtTime(mic.ok) + " afinado";
+  }
+  function micStart(){
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { if (micNote) micNote.textContent = "no disponible"; if (micOnEl) micOnEl.checked = false; return; }
+    try { ensureCtx(); } catch(_){ return; }
+    if (micTip) micTip.hidden = false;
+    navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:false } }).then(function(st){
+      if (!micOnEl || !micOnEl.checked) { st.getTracks().forEach(function(t){ t.stop(); }); return; }
+      mic.stream = st; mic.src = ctx.createMediaStreamSource(st); mic.an = ctx.createAnalyser(); mic.an.fftSize = 2048;
+      mic.buf = new Float32Array(mic.an.fftSize); mic.src.connect(mic.an); micReset(); mic.last = 0;
+      if (micNote) micNote.textContent = "escuchando…";
+      applyVoices();
+      (function step(ts){
+        if (!mic.an) return;
+        mic.raf = requestAnimationFrame(step);
+        if (ts - mic.last < 40) return;
+        var dt = mic.last ? Math.min(0.2, (ts - mic.last) / 1000) : 0.04; mic.last = ts;
+        mic.an.getFloatTimeDomainData(mic.buf);
+        var f = yin(mic.buf, ctx.sampleRate), voiced = f > 0;
+        if (voiced) {
+          /* Suavizado de frecuencia más estable */
+          mic.flog = mic.has ? mic.flog * 0.72 + Math.log2(f) * 0.28 : Math.log2(f);
+          var fs = Math.pow(2, mic.flog);
+          if (lead) {
+            var targetHz = pitchOf(lead);
+            var cents = 1200 * Math.log2(f / targetHz);
+            /* cualquier octava cuenta (normalizar a ±600 cents) */
+            cents = ((cents % 1200) + 1800) % 1200 - 600;
+            /* suavizado adaptativo: más lento cerca del centro, más rápido lejos */
+            var alpha = Math.abs(cents) < 40 ? 0.28 : 0.45;
+            mic.cs = (mic.has && Math.abs(cents - mic.cs) < 350) ? mic.cs * (1 - alpha) + cents * alpha : cents;
+            mic.has = true;
+            /* Ventana de afinación más generosa (±42 cents) + zona “casi” */
+            var ok = Math.abs(mic.cs) < 42;
+            var almost = !ok && Math.abs(mic.cs) < 90;
+            var pos = 50 + clamp(mic.cs / 2.6, -50, 50);
+            D.body.classList.toggle("tn-ok", ok && phase === "tone");
+            if (micDot) {
+              micDot.style.left = pos + "%";
+              micDot.classList.add("on");
+              micDot.classList.toggle("ok", ok);
+              micDot.classList.toggle("almost", almost && !ok);
+            }
+            if (micMatch) {
+              if (ok) micMatch.textContent = "✓ afinado · " + lead.bija;
+              else if (almost) micMatch.textContent = mic.cs < 0 ? "un poco más arriba" : "un poco más abajo";
+              else micMatch.textContent = mic.cs < 0 ? "subí" : "bajá";
+            }
+            if (phase === "tone" && !paused) {
+              mic.tone += dt; mic.cycTone += dt; mic.voiced += dt;
+              if (ok) { mic.ok += dt; mic.cycOk += dt; }
+            }
+          } else mic.has = true;
+          if (micNote) {
+            var centsTxt = lead ? " · " + (mic.cs >= 0 ? "+" : "−") + Math.abs(Math.round(mic.cs)) + "¢" : "";
+            micNote.textContent = noteName(fs) + " · " + Math.round(fs) + " Hz" + centsTxt;
+          }
+        } else {
+          mic.has = false;
+          D.body.classList.remove("tn-ok");
+          if (micDot) { micDot.classList.remove("on", "ok", "almost"); }
+          if (micMatch) micMatch.textContent = lead ? "cantá " + lead.bija : "—";
+          if (micNote) micNote.textContent = "escuchando…";
+          if (phase === "tone" && !paused && lead) { mic.tone += dt; mic.cycTone += dt; }
+        }
+      })(0);
+    }).catch(function(err){
+      var n = err && err.name;
+      if (micNote) micNote.textContent = n === "NotFoundError" ? "no hay micrófono" : n === "NotAllowedError" || n === "SecurityError" ? "permiso denegado" : "no se pudo abrir";
+      if (micOnEl) micOnEl.checked = false; if (micTip) micTip.hidden = true;
+    });
+  }
+  function micStop(){
+    cancelAnimationFrame(mic.raf);
+    try { if (mic.src) mic.src.disconnect(); } catch(_){}
+    if (mic.stream) mic.stream.getTracks().forEach(function(t){ t.stop(); });
+    mic.stream = null; mic.src = null; mic.an = null; mic.buf = null; mic.raf = 0;
+    if (micNote) micNote.textContent = "micrófono apagado";
+    if (micDot) micDot.classList.remove("on", "ok", "almost");
+    if (micMatch) micMatch.textContent = "—";
+    if (micTip) micTip.hidden = true;
+    try { D.body.classList.remove("tn-ok"); } catch(_){}
+  }
+
+  /* ================= ciclo de vida ================= */
+  function start(){
+    try { ensureCtx(); } catch(e) { setStatus("No se pudo iniciar el audio: " + (e.message || e)); return; }
+    if (muted()) { try { if (snd) snd.click(); } catch(_){} }
+    clearTimeout(hudHideT); wakeOn(); spokenId = null;
+    active = true; paused = false; finishing = false; seqIndex = 0; lastStep = 0; lastKey = null; tAccum = 0; tLast = performance.now() / 1000;
+    phase = breathPattern() ? "inhale" : "tone"; sigT = performance.now();
+    var d = $("dancePanel"); if (d) d.hidden = true;
+    D.body.classList.add("toning-mode"); setCssDurations(); setPhaseClass(breathPattern() ? phase : null);
+    if (hud) { positionHud(); hud.classList.add("visible"); }
+    clearInterval(tick); tick = setInterval(loop, 100);
+    updateButtons(); scan(); updateProgress();
+    lastKey = "0:" + phase;
+    onPhaseChange("tone");
+    updateTime();
+    if (micOnEl && micOnEl.checked && !mic.stream) micStart();
+  }
+  function stop(complete){
+    var wasActive = active;
+    active = false; paused = false; finishing = false; solo = null; lead = null; clearInterval(tick); clearTimeout(scanT);
+    if (wasActive) logSession(); setDrone(); wakeOff(); try { window.speechSynthesis && speechSynthesis.cancel(); } catch(_){}
+    D.body.classList.remove("toning-mode", "toning-ph-inhale", "toning-ph-tone", "tn-ok");
+    Object.keys(voices).forEach(function(id){ stopVoice(voices[id]); }); voices = {};
+    clearPaint(); micStop();
+    if (breath && ctx) { try { breath.g.gain.cancelScheduledValues(ctx.currentTime); breath.g.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.15); } catch(_){} }
+    fadeMaster(0.0001, complete ? 4.2 : 1);
+    var micExtra = "";
+    if (complete && mic.ok > 1.5) micExtra = " · " + fmtTime(mic.ok) + " afinado";
+    setStatus(complete ? "Sesión completa 🙏 · " + fmtTime(tAccum) + micExtra : "Modo apagado.");
+    setBreath(null); updateButtons(); updateGuide(); updateTime(); updateProgress();
+    if (hud) {
+      if (complete) {
+        if (hudVowel) hudVowel.textContent = "🙏";
+        if (hudName) hudName.textContent = "Sesión completa · " + fmtTime(tAccum) + micExtra;
+        if (hudHint) hudHint.textContent = mic.ok > 1.5
+          ? "Afinaste el " + Math.round(100 * mic.ok / Math.max(1, mic.tone)) + "% del tiempo cantado. Quedate un momento en silencio."
+          : "Quedate un momento en silencio.";
+        hudHideT = setTimeout(function(){ hud.classList.remove("visible"); }, 9000);
+      }
+      else hud.classList.remove("visible");
+    }
+    if (srEl && wasActive) srEl.textContent = complete ? ("Sesión completa" + micExtra + ".") : "Modo chakras apagado.";
+  }
+  function finish(){
+    if (finishing || !active) return;
+    finishing = true;
+    if (lead) chime(pitchOf(lead), true);
+    /* Un instante de resonancia antes de apagar las voces del mapa. */
+    try {
+      if (ctx) {
+        var now = ctx.currentTime;
+        Object.keys(voices).forEach(function(id){
+          var v = voices[id]; if (!v) return;
+          try {
+            v.g.gain.cancelScheduledValues(now);
+            v.g.gain.setValueAtTime(Math.max(0.0002, v.g.gain.value), now);
+            v.g.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
+          } catch(_){}
+        });
+      }
+    } catch(_){}
+    setStatus("Cerrando sesión…");
+    setTimeout(function(){ stop(true); }, 900);
+  }
+  function pause(){
+    if (!active || paused) return;
+    stepClock(); paused = true; setPhaseClass(null); applyVoices(); scheduleBreathNoise(); paint(); updateGuide(); updateButtons();
+    setStatus("En pausa · " + fmtTime(tAccum));
+  }
+  function resume(){
+    if (!active || !paused) return;
+    paused = false; tLast = performance.now() / 1000; lastKey = null; if (ctx && ctx.state === "suspended") ctx.resume().catch(function(){});
+    scan(); updateButtons();
+  }
+  function togglePause(){ if (!active) start(); else if (paused) resume(); else pause(); }
+  function togglePanel(show){
+    if (!panel) return;
+    var willShow = (show != null) ? !!show : panel.hidden;
+    panel.hidden = !willShow;
+    if (btn) btn.setAttribute("aria-expanded", willShow ? "true" : "false");
+    if (willShow) {
+      var d = $("dancePanel"); if (d) d.hidden = true;
+      if (!active) setStatus("Activá el modo para que el mapa suene.");
+      try { showOnboardIfNeeded(); } catch(_){}
+      try { (playBtn || panel).focus({ preventScroll:true }); } catch(_){}
+    } else if (btn) { try { btn.focus({ preventScroll:true }); } catch(_){} }
+  }
+  /* Onboarding ligero (solo primera vez) */
+  var ONBOARD_KEY = "burbujas.toning.onboard.v1";
+  var onboardStep = 0;
+  function showOnboardIfNeeded(){
+    var box = $("toningOnboard"); if (!box) return;
+    try { if (localStorage.getItem(ONBOARD_KEY)) { box.hidden = true; return; } } catch(_){}
+    onboardStep = 0;
+    Array.prototype.forEach.call(box.querySelectorAll(".to-step"), function(el, i){ el.hidden = i !== 0; });
+    var next = $("toningOnboardNext"); if (next) next.textContent = "Siguiente";
+    box.hidden = false;
+  }
+  function dismissOnboard(){
+    var box = $("toningOnboard"); if (box) box.hidden = true;
+    try { localStorage.setItem(ONBOARD_KEY, "1"); } catch(_){}
+  }
+  (function wireOnboard(){
+    var next = $("toningOnboardNext"), skip = $("toningOnboardSkip"), box = $("toningOnboard");
+    if (!box) return;
+    if (next) next.addEventListener("click", function(){
+      var steps = box.querySelectorAll(".to-step");
+      if (onboardStep < steps.length - 1) {
+        steps[onboardStep].hidden = true;
+        onboardStep++;
+        steps[onboardStep].hidden = false;
+        if (onboardStep === steps.length - 1) next.textContent = "Listo";
+      } else dismissOnboard();
+    });
+    if (skip) skip.addEventListener("click", dismissOnboard);
+  })();
+
+  /* ================= extras: loto, bordón, voz, presets, diario ================= */
+  var hudRing = $("toningHudRing"), guideLotus = $("toningGuideLotus"), spokenId = null, drone = null, wl = null, JKEY = "burbujas.toning.log.v1";
+  function lotus(c){
+    var n = c.p || 8, rx = Math.min(12, 38 / n + 1.5), s = '<svg viewBox="-50 -50 100 100" aria-hidden="true">', i;
+    for (i = 0; i < n; i++) s += '<ellipse rx="' + rx.toFixed(1) + '" ry="20" cy="-30" transform="rotate(' + (360 / n * i).toFixed(2) + ')" fill="' + c.color + '" fill-opacity=".32" stroke="' + c.color + '" stroke-width=".8"/>';
+    return s + '<circle r="11" fill="' + c.color + '" fill-opacity=".9"/><circle r="5" fill="#fff" fill-opacity=".55"/></svg>';
+  }
+  function paintLotus(c){ var h = lotus(c); if (hudRing) hudRing.innerHTML = h; if (guideLotus) guideLotus.innerHTML = h; }
+  function setDrone(){
+    if (!ctx || !master) return;
+    var on = !!(S.drone && active && !paused && !finishing && !muted()), now = ctx.currentTime, hz = pitchOf(BY_ID.root) / 2;
+    if (on && !drone) {
+      var g = ctx.createGain(), o = []; g.gain.value = 0.0001; g.connect(dryBus);
+      [[1, .5], [1.5, .22], [2, .16]].forEach(function(p){ var s = ctx.createOscillator(), pg = ctx.createGain(); s.type = "sine"; s.frequency.value = hz * p[0]; pg.gain.value = p[1]; s.connect(pg); pg.connect(g); s.start(); o.push({ s:s, m:p[0] }); });
+      drone = { g:g, o:o };
+    }
+    if (on && drone) {
+      drone.o.forEach(function(p){ try { p.s.frequency.setTargetAtTime(hz * p.m, now, .3); } catch(_){} });
+      try { drone.g.gain.cancelScheduledValues(now); drone.g.gain.setTargetAtTime(Math.max(.0002, .12 * (S.vol / .34)), now, 1.8); } catch(_){}
+    } else if (drone) {
+      var d = drone; drone = null;
+      try { d.g.gain.cancelScheduledValues(now); d.g.gain.setTargetAtTime(.0001, now, .6); } catch(_){}
+      setTimeout(function(){ d.o.forEach(function(p){ try { p.s.stop(); } catch(_){} }); try { d.g.disconnect(); } catch(_){} }, 3500);
+    }
+  }
+  function refTone(){
+    try { ensureCtx(); } catch(_){ return; }
+    var c = lead || BY_ID.root, hz = pitchOf(c), now = ctx.currentTime, g = ctx.createGain(), k = S.vol / .34;
+    g.gain.setValueAtTime(.0001, now); g.gain.linearRampToValueAtTime(.16 * k, now + .4); g.gain.setTargetAtTime(.0001, now + 2.4, .5); g.connect(ctx.destination);
+    [1, 2].forEach(function(m, i){ var o = ctx.createOscillator(), og = ctx.createGain(); o.frequency.value = hz * m; og.gain.value = i ? .15 : 1; o.connect(og); og.connect(g); o.start(now); o.stop(now + 4); });
+    setStatus("Tono guía · " + c.bija + " · " + noteName(hz));
+  }
+  function cues(){
+    try {
+      if (S.haptic && navigator.vibrate && !paused && !muted()) {
+        /* Inhalar: pulso corto-largo; Cantar: pulso firme */
+        if (phase === "inhale") navigator.vibrate([12, 40, 28]);
+        else navigator.vibrate([50]);
+      }
+    } catch(_){}
+    if (!S.speak || !window.speechSynthesis || !lead || paused) return;
+    try {
+      var txt = phase === "inhale" ? (spokenId !== lead.id ? lead.name + ". " : "") + "Inhalá." : "Cantá " + lead.say + ".";
+      spokenId = lead.id; speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(txt); u.lang = "es-419"; u.rate = .8; u.volume = .7; speechSynthesis.speak(u);
+    } catch(_){}
+  }
+  function jump(d){
+    if (!active || solo || S.seq === "map" || !seq.length) return;
+    var bp = breathPattern(), cl = bp ? bp.inhale + bp.tone : 8, n = Math.max(0, seqIndex + d);
+    if (!S.loop && n >= seq.length) { finish(); return; }
+    tAccum = n * S.cycles * cl + 0.01; tLast = performance.now() / 1000;
+  }
+  function wakeOn(){ try { if (navigator.wakeLock && !wl) navigator.wakeLock.request("screen").then(function(s){ wl = s; s.addEventListener("release", function(){ wl = null; }); }).catch(function(){}); } catch(_){} }
+  function wakeOff(){ try { if (wl) { wl.release(); wl = null; } } catch(_){} }
+  D.addEventListener("visibilitychange", function(){ if (active && !D.hidden) wakeOn(); });
+  function dstr(d){ return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+  function readLog(){ try { var a = JSON.parse(localStorage.getItem(JKEY) || "[]"); return Array.isArray(a) ? a : []; } catch(_){ return []; } }
+  function logSession(){
+    if (tAccum < 30) return; var a = readLog(); a.push({ d:dstr(new Date()), t:Math.round(tAccum), ok:Math.round(mic.ok) });
+    try { localStorage.setItem(JKEY, JSON.stringify(a.slice(-400))); } catch(_){} renderStats();
+  }
+  function renderStats(){
+    var el = $("toningStats"); if (!el) return; var a = readLog();
+    if (!a.length) { el.textContent = "Tu práctica va a aparecer acá."; return; }
+    var days = {}, tot = 0, tm = 0, today = dstr(new Date());
+    a.forEach(function(r){ days[r.d] = 1; tot += r.t; if (r.d === today) tm += r.t; });
+    var d = new Date(), n = 0; if (!days[dstr(d)]) d.setDate(d.getDate() - 1);
+    while (days[dstr(d)]) { n++; d.setDate(d.getDate() - 1); }
+    el.textContent = "📿 Hoy: " + Math.round(tm / 60) + " min · Racha: " + n + " día" + (n === 1 ? "" : "s") + " · Total: " + Math.round(tot / 60) + " min";
+  }
+  var PRESETS = {
+    express:{ seq:"journey", breath:"4-8", cycles:1, dir:"up", loop:false, duration:0, timbre:"coro", drone:false },
+    calm:{ seq:"journey", breath:"5-5", cycles:2, dir:"up", loop:false, duration:0, timbre:"cuenco", verb:.55, vol:.3, drone:true },
+    sleep:{ seq:"journey", breath:"6-10", cycles:2, dir:"down", loop:false, duration:0, timbre:"puro", verb:.6, vol:.2, drone:true },
+    energy:{ seq:"journey", breath:"4-8", cycles:3, dir:"updown", loop:true, duration:10, timbre:"coro", vol:.4, drone:false },
+    ground:{ seq:"journey", breath:"5-5", cycles:3, dir:"up", loop:false, duration:0, timbre:"cuenco", verb:.5, vol:.3, drone:true, range:"low" },
+    lift:{ seq:"journey", breath:"4-8", cycles:2, dir:"up", loop:false, duration:0, timbre:"cristal", verb:.5, vol:.3, drone:false, range:"high" }
+  };
+  var preEl = $("toningPreset");
+  if (preEl) preEl.addEventListener("change", function(){
+    var p = PRESETS[preEl.value]; preEl.value = ""; if (!p) return;
+    S.range = "all"; Object.keys(p).forEach(function(k){ S[k] = p[k]; }); syncUI(); saveSoon();
+    if (active) {
+      var bp = breathPattern(); phase = bp ? "inhale" : "tone"; tAccum = 0; tLast = performance.now() / 1000; lastKey = null; lastStep = 0; seqIndex = 0; setCssDurations();
+      Object.keys(voices).forEach(function(id){ stopVoice(voices[id], true); }); voices = {}; setDrone(); scan();
+    }
+    setStatus("Preset aplicado · tocá «Activar chakras» para empezar.");
+  });
+  [["toningPrev", -1], ["toningNext", 1]].forEach(function(p){ var e = $(p[0]); if (e) e.addEventListener("click", function(){ jump(p[1]); }); });
+  var refEl = $("toningRef"); if (refEl) refEl.addEventListener("click", refTone);
+  paintLotus(CHAKRAS[3]); renderStats();
+
+  /* ================= eventos ================= */
+  buildChips(); syncUI(); updateButtons(); setBreath(null); updateGuide();
+  if (btn) { btn.setAttribute("aria-haspopup", "dialog"); btn.setAttribute("aria-expanded", "false"); btn.setAttribute("aria-pressed", "false"); btn.addEventListener("click", function(){ togglePanel(); }); }
+  if (playBtn) playBtn.addEventListener("click", togglePause);
+  if (stopBtn) stopBtn.addEventListener("click", function(){ if (active) stop(); });
+  if (closeBtn) closeBtn.addEventListener("click", function(){ togglePanel(false); });
+  if (closeX) closeX.addEventListener("click", function(){ togglePanel(false); });
+  BIND.forEach(function(b){
+    var e = $(b[1]); if (!e) return;
+    e.addEventListener(b[2] === "c" || e.tagName === "SELECT" ? "change" : "input", function(){
+      var prev = { seq:S.seq, breath:S.breath, timbre:S.timbre, cycles:S.cycles, dir:S.dir };
+      readUI();
+      if (b[0] === "verb") { if (wetGain && ctx) wetGain.gain.setTargetAtTime(S.verb, ctx.currentTime, 0.2); return; }
+      if (!active) { if (b[0] === "semi" || b[0] === "tuning") updateGuide(); return; }
+      if (b[0] === "vol" || b[0] === "semi" || b[0] === "tuning") { applyVoices(); scheduleBreathNoise(); updateGuide(); return; }
+      if (b[0] === "drone") { setDrone(); return; }
+      if (b[0] === "speak" || b[0] === "haptic" || b[0] === "aura") return;
+      if (b[0] === "bell" || b[0] === "breathSnd" || b[0] === "duration" || b[0] === "loop") { if (b[0] === "breathSnd") scheduleBreathNoise(); updateTime(); return; }
+      if (b[0] === "breath") { phase = breathPattern() ? "inhale" : "tone"; tAccum = 0; tLast = performance.now() / 1000; lastKey = null; lastStep = 0; seqIndex = 0; setCssDurations(); }
+      if (b[0] === "seq" || b[0] === "dir" || b[0] === "cycles" || b[0] === "range") { seqIndex = 0; lastStep = 0; tAccum = 0; tLast = performance.now() / 1000; lastKey = null; }
+      if (b[0] === "timbre" && prev.timbre !== S.timbre) { Object.keys(voices).forEach(function(id){ stopVoice(voices[id], true); }); voices = {}; }
+      scan();
+    });
+  });
+  if (micOnEl) micOnEl.addEventListener("change", function(){
+    if (micOnEl.checked) { if (active) micStart(); else { if (micTip) micTip.hidden = false; if (micNote) micNote.textContent = "se activa con el modo"; } }
+    else { micStop(); if (active) applyVoices(); }
+  });
+  if (chipsBox) chipsBox.addEventListener("click", function(e){
+    var b = e.target.closest && e.target.closest("button[data-v]"); if (!b) return;
+    var id = b.getAttribute("data-v"); solo = (solo === id) ? null : id;
+    if (!active) start(); else scan();
+  });
+
+  /* Clic en burbuja: activar modo y priorizar su chakra (si no hubo arrastre) */
+  (function(){
+    var down = null;
+    var sceneEl = $("scene");
+    if (!sceneEl) return;
+    sceneEl.addEventListener("pointerdown", function(e){
+      if (e.button != null && e.button !== 0) return;
+      var bub = e.target.closest && e.target.closest(".bubble");
+      if (!bub || (e.target.closest && e.target.closest("button,a,.bubble-resize,.bubble-del,.bubble-urgent,.bubble-done,.bubble-note,.bubble-focus,.bubble-shape"))) {
+        down = null; return;
+      }
+      down = { el: bub, x: e.clientX, y: e.clientY, id: e.pointerId };
+    }, true);
+    function clearDown(e){ if (down && (e.pointerId == null || e.pointerId === down.id)) down = null; }
+    sceneEl.addEventListener("pointercancel", clearDown, true);
+    sceneEl.addEventListener("pointerup", function(e){
+      if (!down || (e.pointerId != null && e.pointerId !== down.id)) return;
+      var dx = e.clientX - down.x, dy = e.clientY - down.y;
+      var el = down.el; down = null;
+      if (dx*dx + dy*dy > 100) return; // fue arrastre
+      if (painting) return;
+      var c = chakraFromHue(hueOf(el));
+      if (!active) {
+        // al hacer clic en una burbuja se activa el modo chakras
+        try { start(); } catch(_){ return; }
+      }
+      // priorizar el chakra de la burbuja tocada en modo mapa
+      if (S.seq === "map" && !solo) {
+        lead = c;
+        applyVoices(); paint(); updateGuide();
+        if (!muted() && !paused) setStatus("Sonando · " + c.bija + " · " + c.name);
+      }
+    }, true);
+  })();
+
+
+  try {
+    var scene = $("scene");
+    if (scene) {
+      var SEL_RE = /\b(selected|focused|kb-focus|search-current)\b/;
+      var obs = new MutationObserver(function(muts){
+        if (painting) return;
+        var classChanged = false, gainedSel = false, structure = false;
+        for (var i = 0; i < muts.length; i++) {
+          var m = muts[i];
+          if (m.type === "childList") { structure = true; continue; }
+          var t = m.target;
+          if (!t || !t.classList || !(t.classList.contains("bubble") || t.classList.contains("bubble-wrap"))) continue;
+          var strip = function(s){ return (s || "").replace(/\btoning-\S+/g, "").trim().split(/\s+/).sort().join(" "); };
+          var before = strip(m.oldValue), after = strip(t.getAttribute("class"));
+          if (before === after) continue;
+          classChanged = true;
+          // Activar al seleccionar / enfocar una o más burbujas
+          if (!SEL_RE.test(before) && SEL_RE.test(after)) gainedSel = true;
+        }
+        if (!active) {
+          if (gainedSel) {
+            // gesto del usuario: arranca el audio y sigue al mapa
+            try { start(); } catch(_){}
+          }
+          return;
+        }
+        if (structure || classChanged) scheduleScan(classChanged ? 80 : 350);
+      });
+      obs.observe(scene, { childList:true, attributes:true, subtree:true, attributeOldValue:true, attributeFilter:["class"] });
+    }
+  } catch(_){}
+
+  D.addEventListener("keydown", function(e){
+    var t = e.target, tag = t && t.tagName, typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable);
+    /* Esc: cierra el panel y, si el modo está activo, lo apaga (salvo al escribir) */
+    if (e.key === "Escape") {
+      var handled = false;
+      if (panel && !panel.hidden) { togglePanel(false); handled = true; }
+      if (active && !typing) { stop(); handled = true; }
+      if (handled) { e.preventDefault(); e.stopPropagation(); return; }
+    }
+    if ((e.ctrlKey || e.metaKey) && e.altKey && !e.shiftKey && (e.code === "KeyK" || (e.key || "").toLowerCase() === "k")) {
+      if (typing) return;
+      e.preventDefault(); togglePanel();
+      return;
+    }
+    if (active && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key === "]" || e.key === "[")) { e.preventDefault(); jump(e.key === "]" ? 1 : -1); return; }
+    /* Espacio: pausar / continuar el modo chakras si está activo (sin interferir al escribir) */
+    if (active && !typing && (e.code === "Space" || e.key === " ") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      togglePause();
+    }
+  }, true);
+  if (snd) { try { new MutationObserver(function(){ if (active) { applyVoices(); scheduleBreathNoise(); if (!muted()) scheduleScan(50); } }).observe(snd, { attributes:true, attributeFilter:["class"] }); } catch(_){} }
+  try {
+    new MutationObserver(function(){
+      var b = D.body;
+      if (b.classList.contains("cinema-mode") || b.classList.contains("focus-mode") || b.classList.contains("readonly-mode")) { if (active) stop(); togglePanel(false); }
+    }).observe(D.body, { attributes:true, attributeFilter:["class"] });
+  } catch(_){}
+  window.addEventListener("resize", positionHud);
+  window.addEventListener("pagehide", micStop);
+
+  if (btn) { btn.title = "Modo Chakras — vocal toning con los 7 chakras según el color de cada burbuja (Ctrl+Alt+K)"; btn.textContent = "🧘 chakras"; }
+  /* ================= v3: cuerpo de luz, ondas, reset ================= */
+  var bodyEl = $("toningBody"), bodyOrbs = [];
+  if (bodyEl) CHAKRAS.forEach(function(c){ var i = D.createElement("i"); i.style.setProperty("--c", c.color); i.title = c.name; bodyEl.appendChild(i); bodyOrbs.push(i); });
+  function bodyCol(c){
+    if (!bodyOrbs || !bodyOrbs.forEach) return;
+    bodyOrbs.forEach(function(o, i){
+      var ch = CHAKRAS[i], si = seq.indexOf(ch);
+      o.classList.toggle("lead", !!c && c === ch);
+      o.classList.toggle("on", active && !paused && (ch.id in curT));
+      o.classList.toggle("vis", active && !solo && S.seq === "journey" && si > -1 && si < seqIndex % Math.max(1, seq.length));
+    });
+  }
+  function ripple(){
+    if (!lead || paused || !active || (window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches)) return;
+    var el = getBubbles().filter(function(b){ return cl(b, "toning-lead"); })[0]; if (!el) return;
+    var r = el.getBoundingClientRect(), d = D.createElement("div"); d.className = "tn-ripple";
+    d.style.cssText = "left:" + (r.left + r.width / 2) + "px;top:" + (r.top + r.height / 2) + "px;width:" + r.width + "px;height:" + r.height + "px";
+    D.body.appendChild(d); setTimeout(function(){ d.remove(); }, 2600);
+  }
+  var rstEl = $("toningReset");
+  if (rstEl) rstEl.addEventListener("click", function(){ Object.keys(DEF).forEach(function(k){ S[k] = DEF[k]; }); syncUI(); saveSoon(); if (active) { Object.keys(voices).forEach(function(id){ stopVoice(voices[id], true); }); voices = {}; setCssDurations(); scan(); } setStatus("Ajustes restablecidos."); });
+
+  window.__burbujasToning = { start:start, stop:stop, pause:pause, resume:resume, rebuild:scan, isActive:function(){ return !!active; }, isPaused:function(){ return !!paused; }, togglePanel:togglePanel };
+})();
+</script>
+
+
+
 
 </body>
 </html>
