@@ -1,3 +1,4 @@
+<!-- Burbujas v151 · Leer también en «ver como lista»: el mismo modo Leer del mapa (pegar texto, seleccionar frase, copiarla para que sea idea) ahora vive dentro de la lista, con su propio panel, botón 📖 leer y Ctrl+Alt+L. Crea ideas en el nivel donde estás, después de la idea seleccionada, con el mismo texto guardado que en el mapa (burbujas.lectura.text.v1), misma vista previa, mismo anti-duplicado y mismo Deshacer. Ctrl+Alt+L ya no crea separador en la lista; Ctrl+L sigue siendo separador. Al abrir la lista se cierra el Leer del mapa para no quedar tapado detrás del marco. Basada en Burbujas-150.html. -->
 <!-- Burbujas v150 · Fixes lista: paste ignora buscador/Gmail, restaurar papelera vuelve a su nivel original, Ctrl+X va a papelera, demote() recuerda el indice del padre, mousemove con rAF, Shift+PageDown/Up en una sola pasada, debounce en buscar (180ms) y en nota larga (180ms, save+sync). Basada en Burbujas-149.html. -->
 <!-- Burbujas v147 · El nombre anterior del modo lista desaparece de todo el archivo (ahora «ver como lista»; sus unidades se llaman «ideas»). Keep copia al portapapeles el MAPA COMPLETO (título, jerarquía, notas, conexiones sueltas y grupos) y abre Google Keep: nota nueva y Ctrl+V. Basada en Burbujas-146.html. -->
 <!-- Burbujas v146 · Ver como lista: cada anidación (matrioska) se dibuja como conexión real en el mapa entre madre e hija, las hijas nuevas nacen cerca de su madre, y al des-anidar se quita solo la conexión creada por la lista. Las conexiones dibujadas a mano no se tocan. Basada en Burbujas-145.html. -->
@@ -1422,6 +1423,7 @@ window.__burbujasListSaved=function(){if(!open)return;clearTimeout(syncT);syncT=
 function openList(){
  if(open||window.__burbujasReadOnly)return;
  if(document.querySelector('.modal.is-open')||lockScreen.classList.contains('is-visible'))return;
+ try{if(window.__burbujasLectura&&window.__burbujasLectura.isOpen())window.__burbujasLectura.close();}catch(e){}
  var srcEl=document.getElementById('burbujas-list-src'); if(!srcEl)return;
  try{closeInlineCreator();}catch(e){}
  try{localStorage.setItem('blist_data',JSON.stringify(buildTree()));localStorage.setItem('blist_title',currentTitle||'');}
@@ -10767,6 +10769,34 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:'Ubuntu',sans-s
 }
  .top button.listening{background:var(--accent);color:#fff;border-color:var(--accent)} .mobileBar button.listening{background:var(--accent);color:#fff;border-color:var(--accent)} #micBtn{width:auto;padding:0 10px;border-radius:999px;font-size:12px} .namesakeMark{color:var(--mark);font-size:12px;margin-left:6px;white-space:nowrap} .namesakeMark:hover{color:var(--accent)}
  .no-dict #micBtn, .no-dict #btnDictar{display:none!important}
+ /* v151 · Leer dentro de la lista */
+ #lecturaListBtn{width:auto;padding:0 10px;border-radius:999px;font-size:12px}
+ #lecturaListBtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+ #lecturaPanel{position:fixed;top:0;right:0;bottom:0;width:420px;max-width:min(520px,92vw);z-index:40;display:none;flex-direction:column;background:var(--bg);border-left:1px solid var(--faint);box-shadow:-18px 0 50px rgba(0,0,0,.45)}
+ body.lectura-open #lecturaPanel{display:flex}
+ .lectura-head{flex:none;display:flex;gap:10px;align-items:flex-start;padding:16px 16px 10px 18px;border-bottom:1px solid var(--faint)}
+ .lectura-title{flex:1;min-width:0}
+ .lectura-title b{display:block;font-size:15px}
+ .lectura-title span{display:block;font-size:12px;line-height:1.45;color:var(--muted);margin-top:4px}
+ #lecturaClose{background:none;border:1px solid var(--faint);color:var(--muted);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;flex-shrink:0}
+ #lecturaClose:hover{color:var(--text)}
+ .lectura-actions{flex:none;display:flex;gap:6px;flex-wrap:wrap;padding:12px 16px 0 18px}
+ .lectura-actions button{background:none;border:1px solid var(--faint);color:var(--text);border-radius:999px;padding:7px 12px;cursor:pointer;font-size:12px;font-family:inherit}
+ .lectura-actions button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500}
+ #lecturaText{flex:1;min-height:0;margin:14px 16px 10px 18px;padding:12px;border:1px solid var(--faint);border-radius:8px;overflow:auto;outline:none;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--text);background:transparent}
+ #lecturaText:empty:before{content:attr(data-placeholder);color:var(--muted);white-space:pre-wrap}
+ #lecturaBar{flex:none;padding:10px 16px 12px 18px;border-top:1px solid var(--faint);font-size:12.5px;line-height:1.5;color:var(--muted)}
+ #lecturaBar.ok{color:var(--text)}
+ #lecturaBar.warn{color:#ff9a9a}
+ #lecturaUndo{margin-top:8px;background:none;border:1px solid var(--faint);color:var(--text);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:12px;font-family:inherit}
+ .lectura-foot{flex:none;padding:0 16px 14px 18px;font-size:11px;line-height:1.5;color:var(--muted)}
+ body.lectura-open .top,body.lectura-open .wrap,body.lectura-open .foot{margin-right:420px;max-width:min(680px,calc(100vw - 464px))}
+ @media (max-width:900px){
+   #lecturaPanel{left:0;right:0;top:auto;width:auto;max-width:none;height:46vh;border-left:0;border-top:1px solid var(--faint);box-shadow:0 -18px 50px rgba(0,0,0,.45)}
+   body.lectura-open .top,body.lectura-open .wrap,body.lectura-open .foot{margin-right:auto}
+   body.lectura-open .wrap{padding-bottom:calc(46vh + 40px)}
+   body.lectura-open .mobileBar{bottom:46vh}
+ }
 </style>
 <script>
 (function(){
@@ -10780,7 +10810,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:'Ubuntu',sans-s
 <\/script>
 </head>
 <body data-theme="dark">
-<div class="top"><span class="brand" title="Ver como lista — el título principal editable es el de abajo"><i class="ember" aria-hidden="true"></i>Ver como lista</span><span style="display:flex;gap:6px"><button id="mapBtn" title="Volver al mapa (Ctrl+Alt+V)" style="width:auto;padding:0 10px;border-radius:999px;font-size:12px">🫧 Mapa</button><button id="micBtn" title="Dictar por voz (F8)">🎤 Dictar</button><button id="soundBtn" title="Sonido de tecla (clic para apagar)">🔊</button><button id="themeBtn" title="Claro / Oscuro">○</button></span></div>
+<div class="top"><span class="brand" title="Ver como lista — el título principal editable es el de abajo"><i class="ember" aria-hidden="true"></i>Ver como lista</span><span style="display:flex;gap:6px"><button id="mapBtn" title="Volver al mapa (Ctrl+Alt+V)" style="width:auto;padding:0 10px;border-radius:999px;font-size:12px">🫧 Mapa</button><button id="lecturaListBtn" title="Leer: pegá tu texto, seleccioná una frase y copiala con Ctrl+C o Copiar para que sea idea (Ctrl+Alt+L)" aria-pressed="false">📖 leer</button><button id="micBtn" title="Dictar por voz (F8)">🎤 Dictar</button><button id="soundBtn" title="Sonido de tecla (clic para apagar)">🔊</button><button id="themeBtn" title="Claro / Oscuro">○</button></span></div>
 <div class="wrap">
 <div class="heading" id="heading"></div>
 <div class="connHead" id="connHead"></div>
@@ -10793,6 +10823,28 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:'Ubuntu',sans-s
 <div class="overlay" id="gmailOverlay"><div class="in"><h2>Gmail &nbsp;·&nbsp; .txt</h2><p style="font-size:13px;color:var(--muted);margin-bottom:12px">¿A qué correo lo querés mandar?</p><input id="gmailToInput" class="searchInput" placeholder="ejemplo@correo.com" autocomplete="email" inputmode="email"><div style="margin-top:18px"><button id="gmailSendBtn" style="background:var(--accent);border:none;color:#fff;border-radius:999px;padding:8px 18px;cursor:pointer;font-size:13px">Abrir Gmail</button> <button id="gmailCancelBtn" style="background:none;border:1px solid var(--faint);color:var(--text);border-radius:999px;padding:8px 16px;cursor:pointer;font-size:13px">Cancelar</button></div><div class="close">Enter para abrir Gmail &nbsp;·&nbsp; Esc para cerrar</div></div></div>
 <div class="overlay" id="aerialOverlay"><div class="in"><h2>Vista aérea &nbsp;·&nbsp; Ctrl+B</h2><div class="aerial" id="aerialText"></div><div class="close">Esc para volver &nbsp;·&nbsp; o clic afuera &nbsp;·&nbsp; Ctrl+B para cerrar</div></div></div>
 
+<aside id="lecturaPanel" aria-label="Panel de lectura" aria-hidden="true">
+<div class="lectura-head">
+<div class="lectura-title">
+<b>📖 Leer</b>
+<span>Pegá tu texto, seleccioná una frase y copiala (Ctrl+C o Copiar) para que sea idea en esta lista.</span>
+</div>
+<button type="button" id="lecturaClose" title="Cerrar panel (Esc)" aria-label="Cerrar panel">✕</button>
+</div>
+<div class="lectura-actions" role="toolbar" aria-label="Qué leer">
+<button type="button" id="lecturaOpenFile" class="primary">📄 Abrir archivo</button>
+<button type="button" id="lecturaPaste">📋 Pegar</button>
+<button type="button" id="lecturaSample">✨ Probar con un ejemplo</button>
+<button type="button" id="lecturaClear">🗑 Limpiar</button>
+<input type="file" id="lecturaFile" accept=".txt,.md,.markdown,.pdf" hidden>
+</div>
+<div id="lecturaText" contenteditable="true" spellcheck="false" role="textbox" aria-label="Texto para leer y seleccionar" aria-multiline="true" data-placeholder="Pegá acá tu texto…&#10;&#10;1. Pegá, abrí un archivo o probá con el ejemplo.&#10;2. Seleccioná una frase con el mouse.&#10;3. Copiala con Ctrl+C o con Copiar (clic derecho) y ¡ya es idea! Mirala en la lista, a la izquierda."></div>
+<div id="lecturaBar">
+<span id="lecturaStatus" role="status" aria-live="polite">👉 Seleccioná una frase y copiala con Ctrl+C / Cmd+C o Copiar para convertirla en idea.</span>
+<br><button type="button" id="lecturaUndo" hidden>↩ Deshacer la última idea</button>
+</div>
+<div class="lectura-foot">Ctrl+Alt+L abre/cierra · Esc cierra · Seleccionar no crea nada: copiá (Ctrl+C / Cmd+C o Copiar) para crear la idea.</div>
+</aside>
 <div class="mobileBar" id="mobileBar">
 <button class="primary" id="btnNueva">+ Nueva</button>
 <button id="btnEntrar">Entrar</button>
@@ -10802,7 +10854,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:'Ubuntu',sans-s
 <button id="btnCopiar">Copiar</button>
 <button id="btnCortar">Cortar</button>
 <button id="btnPegar">Pegar</button>
-<button id="btnFontMinus">A-</button><button id="btnFontPlus">A+</button><button id="btnDictar">🎤 Dictar</button><button id="btnGmail">Gmail</button>
+<button id="btnFontMinus">A-</button><button id="btnFontPlus">A+</button><button id="btnLeer">📖 Leer</button><button id="btnDictar">🎤 Dictar</button><button id="btnGmail">Gmail</button>
 <button id="btnKeep">Keep</button>
 </div>
 
@@ -11506,7 +11558,7 @@ function showHelp(show){
 document.getElementById('helpOverlay').style.display=show?'block':'none'; if(show){let groups=[
  ['Moverse', [['Home','entra'],['End','sale'],['Ctrl + Home','al título'],['↑ ↓','moverse'],['Shift + ↑ ↓','elegir varias'],['Alt + ↑ ↓','mover la idea'],['← →','misma palabra en otro lugar'],['Espacio','entra']]],
  ['Escribir', [['Clic en el título grande','editar título principal'],['Enter','nueva idea abajo'],['Shift + Enter','párrafo adentro'],['Ctrl + Enter','dividir la idea'],['F2','editar'],['Backspace al inicio','juntar con la anterior'],['Del al final','juntar con la siguiente'],['Esc','deseleccionar TODO / salir'],['Shift + Esc','terminar y quedarse']]],
- ['Ver y leer', [['F4','texto largo'],...(DICTATION_ENABLED ? [['F8','dictar por voz']] : []),['Ctrl + Alt + V','volver al mapa'],['Ctrl + B','ver todo, con notas adentro'],['↳ conexión','la del mapa: dirección · tipo · palabra'],['Anidación = conexión','mover una idea en la lista mueve su conexión'],['Ctrl + K  /  /','buscar'],['Ctrl + / Ctrl -','agrandar / achicar letra'],['Ctrl + 0','letra normal'],['🔊 arriba','sonido de tecla on / off']]],
+ ['Ver y leer', [['F4','texto largo'],...(DICTATION_ENABLED ? [['F8','dictar por voz']] : []),['Ctrl + Alt + V','volver al mapa'],['Ctrl + Alt + L','leer: texto → ideas'],['Ctrl + B','ver todo, con notas adentro'],['↳ conexión','la del mapa: dirección · tipo · palabra'],['Anidación = conexión','mover una idea en la lista mueve su conexión'],['Ctrl + K  /  /','buscar'],['Ctrl + / Ctrl -','agrandar / achicar letra'],['Ctrl + 0','letra normal'],['🔊 arriba','sonido de tecla on / off']]],
  ['Marcar y corregir', [['Ctrl + M  /  @','marcar'],['Ctrl + J','saltar a la marca'],['Ctrl + N','romper / reactivar namesake ≫'],['Ctrl + Z','deshacer'],['Ctrl + L','separador'],['Del','borrar']]],
  ['Namesakes ≫', [['Mismo texto 2 veces','se enlaza solo, mismos hijos'],['≫×2 en la idea','indica que es namesake'],['Editar hijos en una','se ve en todas'],['Ctrl + N','romper el enlace (copia hijos)'],['← →','saltar entre namesakes']]],
  ['Copiar y compartir', [['Ctrl + C','copiar las elegidas'],['Ctrl + X','cortar las elegidas'],['Ctrl + V','pegar varias o lista'],['Ctrl + G','Gmail · .txt'],['Keep','mandar a Google Keep'],['F9','papelera']]]
@@ -11644,6 +11696,8 @@ document.getElementById('keepBtn').onclick=exportToKeep;
 (function(){var b=document.getElementById('btnNueva'); if(b) b.onclick=()=>{clearMulti(); insertBlank();}; var e=document.getElementById('btnEntrar'); if(e) e.onclick=()=>{promote();}; var s=document.getElementById('btnSalir'); if(s) s.onclick=()=>{demote();}; var ed=document.getElementById('btnEditar'); if(ed) ed.onclick=()=>{if(selected>=curChildren().length){insertBlank(selected);} else {startEdit();}}; var n=document.getElementById('btnNota'); if(n) n.onclick=()=>{openNote();}; var c=document.getElementById('btnCopiar'); if(c) c.onclick=()=>{copySelected();}; var g=document.getElementById('btnGmail'); if(g) g.onclick=()=>{exportToGmail();}; var md=document.getElementById('btnDictar'); if(md) md.onclick=()=>{toggleDictation();}; var fp=document.getElementById('btnFontPlus'); if(fp) fp.onclick=()=>{changeFont(0.15);}; var fm=document.getElementById('btnFontMinus'); if(fm) fm.onclick=()=>{changeFont(-0.15);}; var kp=document.getElementById('btnKeep'); if(kp) kp.onclick=()=>{exportToKeep();}; var pg=document.getElementById('btnPegar'); if(pg) pg.onclick=()=>{pasteFromClipboardButton();}; var ct=document.getElementById('btnCortar'); if(ct) ct.onclick=()=>{cutSelected();};})();
 document.getElementById('themeBtn').onclick=()=>{theme=theme==='dark'?'light':'dark'; document.body.dataset.theme=theme; parent.localStorage.setItem('blist_theme',theme);};
 document.addEventListener('keydown',(e)=>{
+ // v151 · Si el foco está dentro del panel Leer, la lista no secuestra la tecla: escribe, copia y navega el panel.
+ try{ if(e.target&&e.target.closest&&e.target.closest('#lecturaPanel')) return; if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#lecturaPanel')) return; }catch(_e){}
  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='b'){
    e.preventDefault(); e.stopPropagation();
    // Si ya está abierta, Ctrl+B la cierra (alternar)
@@ -11760,7 +11814,7 @@ document.addEventListener('keydown',(e)=>{
  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='j'){e.preventDefault(); jumpToMark(); return;}
  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='f'){e.preventDefault(); openSearch(); return;}
  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='g'){e.preventDefault(); exportToGmail(); return;}
- if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='l'){e.preventDefault(); pushUndo(); let kids=curChildren(); let n={id:uid(),text:'——————————',children:[],note:''}; kids.splice(selected+1,0,n); selected++; save(); render(); return;}
+ if((e.ctrlKey||e.metaKey) && !e.altKey && e.key.toLowerCase()==='l'){e.preventDefault(); pushUndo(); let kids=curChildren(); let n={id:uid(),text:'——————————',children:[],note:''}; kids.splice(selected+1,0,n); selected++; save(); render(); return;}
  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z' && !e.shiftKey){e.preventDefault(); undo(); return;}
  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z' && e.shiftKey){e.preventDefault(); redo(); return;}
  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){e.preventDefault(); save(); return;}
@@ -11822,6 +11876,8 @@ document.addEventListener('mouseup',()=>{
 });
 document.addEventListener('paste',(e)=>{
   let _pt=e.target; let _ae=document.activeElement;
+  // v151 · Pegar dentro de Leer lo maneja el propio panel (texto plano); la lista no debe crear una idea duplicada.
+  try{ if((_pt&&_pt.closest&&_pt.closest('#lecturaPanel'))||(_ae&&_ae.closest&&_ae.closest('#lecturaPanel'))) return; }catch(_e){}
   if((_pt && (_pt.id==='searchInput' || _pt.id==='gmailToInput')) || (_ae && (_ae.id==='searchInput' || _ae.id==='gmailToInput'))) return;
   if(editingNoteIdx!==null) return;
   let text=(e.clipboardData||window.clipboardData)?.getData('text');
@@ -11879,6 +11935,7 @@ render();
 if(data.length===0 && !title){
   selected=0; editing=null; editingIsHeading=false;
   let firstHandler=(ev)=>{
+    try{ if(ev.target&&ev.target.closest&&ev.target.closest('#lecturaPanel')) return; }catch(_e){}
     if(ev.key.length===1 && !ev.ctrlKey && !ev.metaKey && !ev.altKey){
       ev.preventDefault();
       pushUndo(); let kids=curChildren(); let n={id:uid(),text:ev.key,children:[],note:''}; kids.push(n); selected=0; editing=0; editingOrig=ev.key; save(); render();
@@ -11887,6 +11944,224 @@ if(data.length===0 && !title){
   };
   document.addEventListener('keydown', firstHandler, true);
 }
+
+
+/* v151 · Leer dentro de la lista: mismo flujo que en el mapa, pero crea ideas */
+(function(){
+ try{
+  var $l=function(id){return document.getElementById(id);};
+  var lPanel=$l('lecturaPanel'), lText=$l('lecturaText');
+  if(!lPanel||!lText) return;
+  var lBtn=$l('lecturaListBtn'), lBtnMobile=$l('btnLeer'), lClose=$l('lecturaClose'), lStatus=$l('lecturaStatus'), lBar=$l('lecturaBar'), lUndo=$l('lecturaUndo'), lOpenFile=$l('lecturaOpenFile'), lPaste=$l('lecturaPaste'), lSample=$l('lecturaSample'), lClear=$l('lecturaClear'), lFile=$l('lecturaFile');
+  if(!lBtn||!lClose||!lStatus||!lUndo||!lFile) return;
+  var LS_TEXT='burbujas.lectura.text.v1';
+  var MAX_PERSIST=20000, MAX_PDF_BYTES=12*1024*1024;
+  var SAMPLE='Leer es más fácil cuando las ideas se convierten en lista.\nSeleccioná esta frase y copiala (Ctrl+C o Copiar) para que aparezca en la lista.\nCada frase que selecciones y copies se vuelve una idea que podés mover, anidar y ordenar.';
+  var lOpen=false, lLastFocus=null, lLastCreated='', lLastAt=0, lSaveT=null, lCreated=0;
+  function lSay(msg,kind){ if(!lStatus) return; lStatus.textContent=msg||''; if(lBar) lBar.className=kind==='ok'?'ok':(kind==='warn'?'warn':''); }
+  function lGet(){ try{var tx=lText.innerText; if(typeof tx==='string') return tx;}catch(e){} return lText.textContent||''; }
+  function lSet(tx,keep){ lText.textContent=String(tx==null?'':tx); lSaveSoon(); if(!keep) lHideUndo(); }
+  function lAppend(tx){ var cur=lGet(); lSet(cur?cur.replace(/\s+$/,'')+'\n\n'+tx:tx); }
+  function lSaveSoon(){ clearTimeout(lSaveT); lSaveT=setTimeout(function(){ try{parent.localStorage.setItem(LS_TEXT,lGet().slice(0,MAX_PERSIST));}catch(e){} },800); }
+  function lHideUndo(){ if(lUndo) lUndo.hidden=true; }
+  function lShowUndo(){ if(lUndo) lUndo.hidden=false; }
+  function lOpenPanel(){
+    try{ showHelp(false); showAerial(false); closeSearch(); showTrash(false); showGmailOverlay(false); }catch(e){}
+    lOpen=true; lLastFocus=document.activeElement;
+    document.body.classList.add('lectura-open');
+    lPanel.setAttribute('aria-hidden','false');
+    if(lBtn){ lBtn.classList.add('active'); lBtn.setAttribute('aria-pressed','true'); }
+    if(lBtnMobile) lBtnMobile.classList.add('active');
+    if(lGet().trim()) lSay('👉 Seguís donde quedaste. Seleccioná una frase y copiala con Ctrl+C o Copiar: la idea va a aparecer en la lista, a la izquierda del panel.');
+    setTimeout(function(){ try{ lText.focus({preventScroll:true}); }catch(e){} },30);
+  }
+  function lClosePanel(){
+    if(!lOpen) return;
+    lOpen=false;
+    document.body.classList.remove('lectura-open');
+    lPanel.setAttribute('aria-hidden','true');
+    if(lBtn){ lBtn.classList.remove('active'); lBtn.setAttribute('aria-pressed','false'); }
+    if(lBtnMobile) lBtnMobile.classList.remove('active');
+    var f=lLastFocus; lLastFocus=null;
+    if(f&&f.focus){ try{ f.focus({preventScroll:true}); }catch(e){} }
+  }
+  function lToggle(){ if(lOpen) lClosePanel(); else lOpenPanel(); }
+  function lCreate(tx){
+    var txt=String(tx==null?'':tx).trim();
+    if(txt.length<3) return;
+    if(txt.length>10000){ lSay('Esa selección es muy larga. Seleccioná un pedacito más chico.','warn'); return; }
+    if(txt===lLastCreated && Date.now()-lLastAt<3000){ lSay('Esa frase ya es una idea. Seleccioná otra y copiala.','warn'); return; }
+    var lines=txt.split(/\r?\n/).map(function(s){return s.trim();}).filter(Boolean);
+    if(!lines.length) return;
+    if(lines.length>1){ lines=lines.map(function(s){ return s.replace(/^[-•*—–+]\s+/,'').replace(/^\d+[\.\)]\s+/,'').replace(/^[a-zA-Z][\.\)]\s+/,'').trim(); }).filter(Boolean); }
+    if(!lines.length) return;
+    try{ pushUndo(); }catch(e){}
+    var kids=curChildren();
+    var pos=selected+1; if(pos<0) pos=0; if(pos>kids.length) pos=kids.length;
+    lines.forEach(function(line,i){ var n={id:uid(),text:line,children:[],note:''}; kids.splice(pos+i,0,n); });
+    selected=pos; try{ clearMulti(); }catch(e){}
+    try{ linkNamesakes(); }catch(e){}
+    try{ save(); }catch(e){}
+    try{ render(); }catch(e){}
+    lLastCreated=txt; lLastAt=Date.now(); lCreated+=lines.length;
+    var preview=lines[0].length>60?lines[0].slice(0,60)+'…':lines[0];
+    var extra=lines.length>1?' (+'+(lines.length-1)+' más)':'';
+    lSay('✅ ¡Listo! «'+preview+'»'+extra+' ya es una idea. Mirala en la lista, a la izquierda del panel. Seleccioná otra frase y copiala.','ok');
+    lShowUndo();
+    try{ showFootMsg('Idea creada desde Leer'); }catch(e){}
+  }
+  function lSel(){
+    try{
+      var s=window.getSelection();
+      if(!s||s.rangeCount===0||s.isCollapsed) return '';
+      var node=s.anchorNode; if(!node) return '';
+      var el=node.nodeType===1?node:node.parentElement;
+      if(!el||!lText.contains(el)) return '';
+      return s.toString()||'';
+    }catch(e){ return ''; }
+  }
+  function lPreview(){
+    var tx=lSel(); if(!tx) return;
+    var txt=String(tx).trim(); if(txt.length<3) return;
+    if(txt.length>10000){ lSay('Esa selección es muy larga. Seleccioná un pedacito más chico.','warn'); return; }
+    var preview=txt.length>60?txt.slice(0,60)+'…':txt;
+    lSay('✂️ «'+preview+'» — copiala con Ctrl+C / Cmd+C o Copiar para que sea idea.','');
+  }
+  function lHandleCopy(){
+    var tx=lSel(); if(!tx) return;
+    var captured=String(tx);
+    setTimeout(function(){ lCreate(captured); },0);
+  }
+  function extractPdfText(buf){
+var bytes = new Uint8Array(buf);
+var s = "";
+try{ s = new TextDecoder("latin1").decode(bytes); }catch(e){
+  var parts = [];
+  for(var i = 0; i < bytes.length; i += 65536){ parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 65536))); }
+  s = parts.join("");
+}
+var out = [];
+var i = 0;
+while(i < s.length){
+  if(s[i] === "("){
+    var depth = 1, j = i + 1, cur = "";
+    while(j < s.length && depth > 0){
+      var c = s[j];
+      if(c === "\\" && j + 1 < s.length){
+        var n = s[j + 1];
+        if(n === "n") cur += "\n";
+        else if(n === "r") cur += "\r";
+        else if(n === "t") cur += "\t";
+        else if(n === "(" || n === ")" || n === "\\") cur += n;
+        else if(/[0-7]/.test(n)){
+          var oct = n, k = j + 2;
+          while(k < s.length && k < j + 4 && /[0-7]/.test(s[k])){ oct += s[k]; k++; }
+          j = k - 1;
+          try{ cur += String.fromCharCode(parseInt(oct, 8)); }catch(e){}
+        } else cur += n;
+        j += 2; continue;
+      } else if(c === "("){ depth++; cur += c; j++; continue; }
+      else if(c === ")"){ depth--; if(depth > 0) cur += c; j++; continue; }
+      else { cur += c; j++; }
+    }
+    var ahead = s.slice(j, j + 90);
+    var isText = /^\s*Tj\b/.test(ahead) || ahead.indexOf("TJ") !== -1 || /^\s*['"]/.test(ahead);
+    if(isText && cur.trim()) out.push(cur);
+    i = j;
+  } else i++;
+}
+var joined = out.join(" ").replace(/[ \t\f\v]+/g, " ").replace(/\s*\n\s*/g, "\n").trim();
+joined = joined.replace(/([.!?…:;])\s+([A-ZÁÉÍÓÚÑ“"(\[])/g, "$1\n$2");
+return joined;
+    }
+  if(lOpenFile) lOpenFile.addEventListener('click',function(){ lFile.click(); });
+  if(lFile) lFile.addEventListener('change',function(){
+    var f=lFile.files&&lFile.files[0]; if(!f) return;
+    var name=f.name||'archivo'; var isPdf=/\.pdf$/i.test(name);
+    if(isPdf&&f.size>MAX_PDF_BYTES){ lSay('Ese PDF es muy grande. Copiá el texto y pegalo acá.','warn'); lFile.value=''; return; }
+    var reader=new FileReader();
+    reader.onload=function(){
+      if(isPdf){
+        var extracted=''; try{ extracted=extractPdfText(reader.result); }catch(e){ extracted=''; }
+        if(extracted&&extracted.length>20){ lAppend(extracted); lSay('✅ «'+name+'» listo. Seleccioná una frase y copiala con Ctrl+C o Copiar para que sea idea.','ok'); }
+        else { lSay('No pude leer ese PDF (suele pasar con escaneados). Copiá el texto y pegalo acá.','warn'); }
+      } else {
+        var txt=String(reader.result||''); if(!txt.trim()){ lSay('Ese archivo está vacío.','warn'); return; }
+        lAppend(txt); lSay('✅ «'+name+'» listo. Seleccioná una frase y copiala con Ctrl+C o Copiar para que sea idea.','ok');
+      }
+    };
+    reader.onerror=function(){ lSay('No pude leer el archivo.','warn'); };
+    if(isPdf) reader.readAsArrayBuffer(f); else reader.readAsText(f);
+    lFile.value='';
+  });
+  if(lPaste) lPaste.addEventListener('click',function(){
+    if(navigator.clipboard&&navigator.clipboard.readText){
+      navigator.clipboard.readText().then(function(txt){
+        if(txt&&txt.trim()){ lAppend(txt); lSay('✅ Texto pegado. Seleccioná una frase y copiala con Ctrl+C o Copiar para que sea idea.','ok'); }
+        else { lSay('El portapapeles está vacío. Pegá con Ctrl+V acá adentro.','warn'); try{ lText.focus({preventScroll:true}); }catch(e){} }
+      }).catch(function(){ lSay('Pegá con Ctrl+V acá adentro.','warn'); try{ lText.focus({preventScroll:true}); }catch(e){} });
+    } else { lSay('Pegá con Ctrl+V acá adentro.','warn'); try{ lText.focus({preventScroll:true}); }catch(e){} }
+  });
+  if(lSample) lSample.addEventListener('click',function(){
+    if(!lGet().trim()) lSet(SAMPLE); else lAppend(SAMPLE);
+    lSay('Ejemplo cargado. Seleccioná una frase y copiala (Ctrl+C o Copiar) para que aparezca en la lista.','ok');
+    try{ lText.focus({preventScroll:true}); }catch(e){}
+  });
+  if(lClear) lClear.addEventListener('click',function(){
+    lSet(''); try{ parent.localStorage.removeItem(LS_TEXT); }catch(e){}
+    lLastCreated=''; lLastAt=0;
+    lSay('👉 Panel limpio. Pegá tu texto, seleccioná una frase y copiala con Ctrl+C o Copiar.','');
+  });
+  if(lUndo) lUndo.addEventListener('click',function(){
+    try{ undo(); }catch(e){}
+    lLastCreated=''; lLastAt=0; lHideUndo();
+    lSay('↩ Deshecho. Seleccioná otra frase y copiala.','');
+  });
+  if(lText.addEventListener){
+    lText.addEventListener('mouseup',function(e){ e.stopPropagation(); setTimeout(lPreview,30); });
+    lText.addEventListener('touchend',function(e){ e.stopPropagation(); setTimeout(lPreview,60); });
+    lText.addEventListener('keyup',function(e){ if(e.shiftKey&&(e.key||'').indexOf('Arrow')===0){ setTimeout(lPreview,30); } });
+    lText.addEventListener('copy',function(e){ try{ lHandleCopy(); }catch(err){} });
+    lText.addEventListener('dragstart',function(e){ e.preventDefault(); });
+    lText.addEventListener('paste',function(e){
+      try{
+        var cd=e.clipboardData; if(!cd) return;
+        var txt=cd.getData('text/plain')||cd.getData('text')||'';
+        if(!txt) return;
+        e.preventDefault(); e.stopPropagation();
+        var ok=false;
+        try{ ok=document.execCommand('insertText',false,txt); }catch(err){ ok=false; }
+        if(!ok){
+          var sel=window.getSelection();
+          if(sel&&sel.rangeCount){ var range=sel.getRangeAt(0); range.deleteContents(); range.insertNode(document.createTextNode(txt)); range.collapse(false); sel.removeAllRanges(); sel.addRange(range); }
+          else { lText.textContent=(lGet()?lGet()+'\n':'')+txt; }
+        }
+        lSaveSoon();
+      }catch(err){}
+    });
+    lText.addEventListener('input',function(){ lSaveSoon(); });
+  }
+  if(lBtn) lBtn.addEventListener('click',function(){ lToggle(); });
+  if(lBtnMobile) lBtnMobile.addEventListener('click',function(){ lToggle(); });
+  if(lClose) lClose.addEventListener('click',function(){ lClosePanel(); });
+  document.addEventListener('keydown',function(e){
+    if((e.ctrlKey||e.metaKey)&&e.altKey&&!e.shiftKey&&(e.code==='KeyL'||(e.key||'').toLowerCase()==='l')){
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); lToggle(); return;
+    }
+    if(e.key==='Escape'&&lOpen){
+      var hO=document.getElementById('helpOverlay').style.display==='block';
+      var aO=document.getElementById('aerialOverlay').style.display==='block';
+      var sO=document.getElementById('searchOverlay').style.display==='block';
+      var tO=document.getElementById('trashOverlay').style.display==='block';
+      var gO=document.getElementById('gmailOverlay').style.display==='block';
+      if(hO||aO||sO||tO||gO) return;
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); lClosePanel(); return;
+    }
+  },true);
+  try{ var savedText=parent.localStorage.getItem(LS_TEXT); if(savedText) lText.textContent=savedText; }catch(e){}
+  try{ window.__listLectura={open:lOpenPanel,close:lClosePanel,toggle:lToggle,isOpen:function(){return lOpen;},createdCount:function(){return lCreated;}}; }catch(e){}
+ }catch(err){}
+})();
 
 window.__listApi={snap:function(){return {data:data,title:title};},flush:function(){try{if(dictListening)stopDictation();}catch(e){} try{if(editingNoteIdx!==null)closeNote(true);else if(editing!==null||editingIsHeading)finishEdit(true);}catch(e){} return {data:data,title:title};}};
 document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.altKey&&e.code==='KeyV'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();try{parent.__burbujasListClose();}catch(_e){}}},true);
